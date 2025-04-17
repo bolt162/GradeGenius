@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserButton, SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 
 const smoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
   e.preventDefault();
@@ -22,8 +21,6 @@ const smoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) 
 
 export default function Navigation() {
   const pathname = usePathname();
-  const { isSignedIn } = useAuth();
-  
   const isLoginPage = pathname === '/login' || pathname === '/signup';
   const isDemoPage = pathname === '/demo';
   
@@ -88,30 +85,10 @@ export default function Navigation() {
                 </a>
               </>
             )}
-            
-            {isSignedIn ? (
-              <div className="flex items-center space-x-4">
-                <Link href="/dashboard" className="text-neutral-900 hover:text-indigo-600 relative group">
-                  <span>Dashboard</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-                <UserButton afterSignOutUrl="/" />
-              </div>
-            ) : (
-              !isLoginPage && (
-                <div className="flex items-center space-x-4">
-                  <SignInButton mode="modal">
-                    <button className="text-indigo-600 hover:text-indigo-800">
-                      Sign In
-                    </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
-                      Get Started
-                    </button>
-                  </SignUpButton>
-                </div>
-              )
+            {!isLoginPage && (
+              <Link href="/login" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                Get Started
+              </Link>
             )}
           </div>
         </div>
