@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { useState } from 'react';
 
 const smoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
   e.preventDefault();
@@ -21,11 +23,23 @@ const smoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) 
 
 export default function Navigation() {
   const pathname = usePathname();
-  const isLoginPage = pathname === '/login' || pathname === '/signup';
+  const { isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  const isLoginPage = pathname === '/login' || pathname === '/signup' || pathname === '/verify';
   const isDemoPage = pathname === '/demo';
   
   // For pages other than the homepage (/)
   const isNotHomePage = pathname !== '/';
+
+  const handleSignOut = () => {
+    signOut();
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
 
   return (
     <nav className="bg-white shadow-lg fixed w-full z-10">
@@ -85,10 +99,50 @@ export default function Navigation() {
                 </a>
               </>
             )}
-            {!isLoginPage && (
-              <Link href="/login" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
-                Get Started
-              </Link>
+            
+            {isSignedIn ? (
+              <div className="relative">
+                <button 
+                  onClick={toggleDropdown}
+                  className="flex items-center space-x-2 focus:outline-none"
+                >
+                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-medium">
+                    {user?.firstName?.[0] || user?.username?.[0] || 'U'}
+                  </div>
+                  <span className="text-neutral-900">{user?.firstName || user?.username}</span>
+                </button>
+                
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                    <Link 
+                      href="/dashboard" 
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-indigo-50"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link 
+                      href="/profile" 
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-indigo-50"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button 
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-indigo-50"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              !isLoginPage && (
+                <Link href="/login" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                  Get Started
+                </Link>
+              )
             )}
           </div>
         </div>

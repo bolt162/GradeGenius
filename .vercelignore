@@ -1,0 +1,2 @@
+# Ignore the [[...sign-in]] folder from the Clerk SDK
+.clerk 
