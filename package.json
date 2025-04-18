@@ -14,6 +14,7 @@
     "@clerk/themes": "^2.2.34",
     "@langchain/core": "^0.3.44",
     "@langchain/openai": "^0.5.5",
+    "lucide-react": "^0.488.0",
     "next": "15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
