@@ -9,6 +9,8 @@ export default function DemoPage() {
   const [response, setResponse] = useState('');
   const [studentWork, setStudentWork] = useState('');
   const [rubric, setRubric] = useState('');
+  const [submissionType, setSubmissionType] = useState<string | undefined>(undefined);
+  const [detectedType, setDetectedType] = useState<string | undefined>(undefined);
   const [error, setError] = useState('');
   const maxChars = 500;
 
@@ -24,6 +26,7 @@ export default function DemoPage() {
       setIsLoading(true);
       setError('');
       setResponse('');
+      setDetectedType(undefined);
       
       const res = await fetch('/api/grade', {
         method: 'POST',
@@ -33,6 +36,7 @@ export default function DemoPage() {
         body: JSON.stringify({
           studentWork,
           rubric: rubric || 'Grade on clarity, organization, and accuracy.',
+          submissionType,
         }),
       });
 
@@ -42,6 +46,7 @@ export default function DemoPage() {
 
       const data = await res.json();
       setResponse(data.result);
+      setDetectedType(data.detectedType);
     } catch (err) {
       console.error(err);
       setError('Something went wrong. Please try again.');
@@ -81,6 +86,56 @@ export default function DemoPage() {
                     />
                     <div className="absolute bottom-3 right-3 text-sm text-neutral-500">
                       {maxChars - studentWork.length} characters left
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="submissionType" className="block text-lg font-medium text-neutral-700 mb-2">
+                    Submission Type
+                  </label>
+                  <div className="flex space-x-4">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="auto-detect"
+                        name="submissionType"
+                        value=""
+                        checked={submissionType === undefined}
+                        onChange={() => setSubmissionType(undefined)}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <label htmlFor="auto-detect" className="ml-2 text-neutral-700">
+                        Auto-detect
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="code"
+                        name="submissionType"
+                        value="code"
+                        checked={submissionType === 'code'}
+                        onChange={() => setSubmissionType('code')}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <label htmlFor="code" className="ml-2 text-neutral-700">
+                        Code
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="essay"
+                        name="submissionType"
+                        value="essay"
+                        checked={submissionType === 'essay'}
+                        onChange={() => setSubmissionType('essay')}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <label htmlFor="essay" className="ml-2 text-neutral-700">
+                        Essay
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -136,13 +191,20 @@ export default function DemoPage() {
                   </div>
                 </div>
               ) : response ? (
-                <div className="flex-grow overflow-auto max-h-[400px] h-[400px] border border-gray-100 rounded-lg p-4">
-                  <div className="prose prose-indigo max-w-none text-black">
-                    {response.split('\n').map((line, i) => (
-                      line ? <p key={i} className="mb-4 text-black">{line}</p> : <br key={i} />
-                    ))}
+                <>
+                  {detectedType && (
+                    <div className="mb-3 text-sm bg-indigo-50 text-indigo-700 rounded-md px-3 py-1 inline-block">
+                      Detected as: {detectedType.charAt(0).toUpperCase() + detectedType.slice(1)} submission
+                    </div>
+                  )}
+                  <div className="flex-grow overflow-auto max-h-[400px] h-[400px] border border-gray-100 rounded-lg p-4">
+                    <div className="prose prose-indigo max-w-none text-black">
+                      {response.split('\n').map((line, i) => (
+                        line ? <p key={i} className="mb-4 text-black">{line}</p> : <br key={i} />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </>
               ) : (
                 <div className="flex-grow flex items-center justify-center text-neutral-500 text-center">
                   <div>
