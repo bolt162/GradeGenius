@@ -37,9 +37,9 @@ export default function Home() {
               <Link href="/demo" className="bg-indigo-600 text-white px-8 py-3 rounded-md hover:bg-indigo-700">
                 Try Demo
               </Link>
-              <button className="border border-indigo-600 text-indigo-600 px-8 py-3 rounded-md hover:bg-indigo-50">
-                Learn More
-              </button>
+              <Link href="/dashboard" className="border border-indigo-600 text-indigo-600 px-8 py-3 rounded-md hover:bg-indigo-50">
+                Dashboard
+              </Link>
             </div>
           </div>
         </div>
