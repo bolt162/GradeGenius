@@ -12,6 +12,7 @@ export default function DemoPage() {
   const [submissionType, setSubmissionType] = useState<string | undefined>(undefined);
   const [detectedType, setDetectedType] = useState<string | undefined>(undefined);
   const [error, setError] = useState('');
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const maxChars = 500;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +28,13 @@ export default function DemoPage() {
       setError('');
       setResponse('');
       setDetectedType(undefined);
+      setDebugInfo([]);
       
+      console.log('FRONTEND: About to make API request to /api/grade');
+      console.log('FRONTEND: Submission type:', submissionType || 'auto-detect');
+      console.log('FRONTEND: Content length:', studentWork.length);
+      
+      const startTime = Date.now();
       const res = await fetch('/api/grade', {
         method: 'POST',
         headers: {
@@ -39,16 +46,37 @@ export default function DemoPage() {
           submissionType,
         }),
       });
-
+      
+      const requestTime = Date.now() - startTime;
+      console.log(`FRONTEND: API request completed in ${requestTime}ms with status: ${res.status}`);
+      
+      const data = await res.json();
+      
+      // Check for error response
       if (!res.ok) {
-        throw new Error('Failed to get response from AI');
+        console.error('FRONTEND: API request failed with status:', res.status);
+        setError(data.error || `Failed to get response from AI (Status: ${res.status})`);
+        
+        // Display debug info if available
+        if (data.debug && Array.isArray(data.debug)) {
+          console.log('FRONTEND: Debug info received:', data.debug);
+          setDebugInfo(data.debug);
+        }
+        return;
       }
 
-      const data = await res.json();
+      console.log('FRONTEND: API response received successfully');
+      
+      // Display debug info if available (even on success)
+      if (data.debug && Array.isArray(data.debug)) {
+        console.log('FRONTEND: Debug info received:', data.debug);
+        setDebugInfo(data.debug);
+      }
+      
       setResponse(data.result);
       setDetectedType(data.detectedType);
     } catch (err) {
-      console.error(err);
+      console.error('FRONTEND ERROR:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
@@ -162,7 +190,19 @@ export default function DemoPage() {
                 </div>
                 
                 {error && (
-                  <div className="text-red-500 text-sm py-2">{error}</div>
+                  <div className="text-red-500 text-sm py-2 space-y-2">
+                    <p>{error}</p>
+                    {debugInfo.length > 0 && (
+                      <div className="mt-2 p-3 bg-gray-100 rounded-md text-xs font-mono overflow-auto max-h-40">
+                        <p className="font-semibold mb-1">Debug Information:</p>
+                        {debugInfo.map((line, i) => (
+                          <div key={i} className="truncate">
+                            {i+1}. {line}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
                 
                 <button
@@ -218,6 +258,24 @@ export default function DemoPage() {
                     <p>Your AI assessment will appear here</p>
                     <p className="text-sm mt-2">Submit student work to get started</p>
                   </div>
+                </div>
+              )}
+
+              {/* Debug info in success state */}
+              {!isLoading && response && debugInfo.length > 0 && (
+                <div className="mt-4 border-t pt-4">
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-indigo-600 hover:text-indigo-800">
+                      Show Processing Details
+                    </summary>
+                    <div className="mt-2 p-3 bg-gray-100 rounded-md font-mono overflow-auto max-h-40">
+                      {debugInfo.map((line, i) => (
+                        <div key={i} className="truncate">
+                          {i+1}. {line}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 </div>
               )}
             </div>
