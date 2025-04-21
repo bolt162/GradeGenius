@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { FileText, Send, Loader2, ChevronLeft, Upload, AlertCircle, CheckCircle, Edit3, ArrowUp, Download, Coins, CreditCard } from 'lucide-react';
@@ -8,7 +8,22 @@ import Link from 'next/link';
 import Layout from '../components/Layout';
 import { Tab } from '@headlessui/react';
 
-export default function GradePage() {
+// Loading component for Suspense fallback
+function GradePageLoading() {
+  return (
+    <Layout activePage="assignments">
+      <div className="container mx-auto">
+        <div className="flex justify-center items-center p-12">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mr-2" />
+          <p className="text-lg">Loading assignment...</p>
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
+// Main component that uses useSearchParams
+function GradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fileKeyParam = searchParams.get('fileKey');
@@ -198,6 +213,7 @@ export default function GradePage() {
           setShowTokenWarning(true);
           throw new Error('Insufficient tokens to grade this assignment');
         }
+        
         throw new Error(data.error || 'Grading failed');
       }
       
@@ -310,10 +326,10 @@ export default function GradePage() {
         <a 
           href={fileUrl} 
           target="_blank" 
-          rel="noopener noreferrer"
+          rel="noopener noreferrer" 
           className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md flex items-center"
         >
-          <Download size={18} className="mr-2" />
+        <Download size={18} className="mr-2" />
           Download File
         </a>
       </div>
@@ -408,32 +424,38 @@ export default function GradePage() {
               
               <Tab.Panels>
                 <Tab.Panel>
-                  {renderFileContent()}
-                  
-                  <div className="mt-4 flex justify-end">
-                    <input 
-                      type="file" 
-                      ref={fileInputRef}
-                      className="hidden" 
-                      onChange={handleFileUpload}
-                    />
-                    <button 
-                      onClick={triggerFileUpload}
-                      className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md flex items-center"
-                    >
-                      <Upload size={18} className="mr-2" />
-                      {fileUrl ? 'Upload Different File' : 'Upload File'}
-                    </button>
-                  </div>
+                  {({ selected }) => (
+                    <>
+                      {renderFileContent()}
+                      
+                      <div className="mt-4 flex justify-end">
+                        <input 
+                          type="file" 
+                          ref={fileInputRef}
+                          className="hidden" 
+                          onChange={handleFileUpload}
+                        />
+                        <button 
+                          onClick={triggerFileUpload}
+                          className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md flex items-center"
+                        >
+                          <Upload size={18} className="mr-2" />
+                          {fileUrl ? 'Upload Different File' : 'Upload File'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </Tab.Panel>
                 
                 <Tab.Panel>
-                  <textarea
-                    className="w-full p-4 h-64 bg-gray-800 border border-gray-700 rounded-md font-mono text-sm resize-none"
-                    placeholder="Paste student work here..."
-                    value={directTextInput}
-                    onChange={(e) => setDirectTextInput(e.target.value)}
-                  ></textarea>
+                  {({ selected }) => (
+                    <textarea
+                      className="w-full p-4 h-64 bg-gray-800 border border-gray-700 rounded-md font-mono text-sm resize-none"
+                      placeholder="Paste student work here..."
+                      value={directTextInput}
+                      onChange={(e) => setDirectTextInput(e.target.value)}
+                    ></textarea>
+                  )}
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>
@@ -489,5 +511,14 @@ export default function GradePage() {
         )}
       </div>
     </Layout>
+  );
+}
+
+// Wrapper component with suspense boundary
+export default function GradePage() {
+  return (
+    <Suspense fallback={<GradePageLoading />}>
+      <GradePageContent />
+    </Suspense>
   );
 } 
