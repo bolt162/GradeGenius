@@ -1,35 +1,37 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 // Define protected routes
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)', 
+  '/assignments(.*)', 
+  '/grade(.*)', 
+  '/tokens(.*)',
+  '/analytics(.*)',
+  '/settings(.*)',
+  '/help(.*)',
+  '/test-upload(.*)'
+]);
 
-// Use a basic middleware approach instead of clerkMiddleware
-export default function middleware(request: NextRequest) {
-  try {
-    // Check if user is authenticated with a cookie-based approach
-    const hasAuthCookie = request.cookies.has('__clerk_session') || 
-                           request.cookies.has('__session');
-    
-    // For protected routes, redirect to login if not authenticated
-    if (isProtectedRoute(request) && !hasAuthCookie) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Middleware error:', error);
-    // Always return a valid response even on error
-    return NextResponse.next();
+// Use the middleware from Clerk
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect();
   }
-}
+});
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    
     // Always run for API routes
-    '/(api|trpc)(.*)',
+    '/api/(.*)'
   ],
 }; 

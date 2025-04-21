@@ -35,7 +35,7 @@ export default function LoginPage() {
       if (result.status === 'complete') {
         // User has been authenticated
         await setActive({ session: result.createdSessionId });
-        router.push('/'); // Redirect to home page after successful login
+        router.push('/dashboard'); // Redirect to dashboard page after successful login
       } else {
         // The sign-in process needs to continue
         console.log(result);

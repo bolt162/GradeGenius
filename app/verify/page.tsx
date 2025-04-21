@@ -33,7 +33,7 @@ export default function VerifyPage() {
       if (result.status === 'complete') {
         // Set the user as active and redirect to the dashboard
         await setActive({ session: result.createdSessionId });
-        router.push('/');
+        router.push('/dashboard');
       } else {
         // The verification may need more steps
         console.log(result);

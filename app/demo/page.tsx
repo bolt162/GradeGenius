@@ -67,7 +67,7 @@ export default function DemoPage() {
 
       console.log('FRONTEND: API response received successfully');
       
-      // Display debug info if available (even on success)
+      // Save debug info but don't display it
       if (data.debug && Array.isArray(data.debug)) {
         console.log('FRONTEND: Debug info received:', data.debug);
         setDebugInfo(data.debug);
@@ -190,18 +190,8 @@ export default function DemoPage() {
                 </div>
                 
                 {error && (
-                  <div className="text-red-500 text-sm py-2 space-y-2">
+                  <div className="text-red-500 text-sm py-2">
                     <p>{error}</p>
-                    {debugInfo.length > 0 && (
-                      <div className="mt-2 p-3 bg-gray-100 rounded-md text-xs font-mono overflow-auto max-h-40">
-                        <p className="font-semibold mb-1">Debug Information:</p>
-                        {debugInfo.map((line, i) => (
-                          <div key={i} className="truncate">
-                            {i+1}. {line}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
                 
@@ -258,24 +248,6 @@ export default function DemoPage() {
                     <p>Your AI assessment will appear here</p>
                     <p className="text-sm mt-2">Submit student work to get started</p>
                   </div>
-                </div>
-              )}
-
-              {/* Debug info in success state */}
-              {!isLoading && response && debugInfo.length > 0 && (
-                <div className="mt-4 border-t pt-4">
-                  <details className="text-xs">
-                    <summary className="cursor-pointer text-indigo-600 hover:text-indigo-800">
-                      Show Processing Details
-                    </summary>
-                    <div className="mt-2 p-3 bg-gray-100 rounded-md font-mono overflow-auto max-h-40">
-                      {debugInfo.map((line, i) => (
-                        <div key={i} className="truncate">
-                          {i+1}. {line}
-                        </div>
-                      ))}
-                    </div>
-                  </details>
                 </div>
               )}
             </div>

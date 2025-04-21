@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
+import { auth } from '@clerk/nextjs/server';
 import { detectSubmissionType } from '../../lib/contentAnalyzer';
 import { classifySubmissionType } from '../../lib/classificationAgent';
 import { codeGradingPrompt, essayGradingPrompt, defaultGradingPrompt } from '../../lib/prompts';
+import { storeGradeResult } from '../../lib/s3';
+import { getUserTokens, useUserTokens, calculateTokens } from '../../lib/dynamo';
+import { currentUser } from '@clerk/nextjs/server';
 
 export async function POST(request: Request) {
   console.log('BACKEND: API route handler started');
@@ -14,10 +18,21 @@ export async function POST(request: Request) {
   let errorDetails = '';
   
   try {
+    // Check authentication
+    const authObject = await auth();
+    const userId = authObject.userId;
+    if (!userId) {
+      debugLog.push('User not authenticated');
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in.', debug: debugLog },
+        { status: 401 }
+      );
+    }
+    
     // Parse the request body
     debugLog.push('Parsing request body');
     const body = await request.json();
-    const { studentWork, rubric, submissionType } = body;
+    const { studentWork, rubric, submissionType, fileName, fileKey } = body;
     debugLog.push(`Request parsed - type: ${submissionType || 'auto-detect'}, content length: ${studentWork?.length || 0}`);
 
     if (!studentWork) {
@@ -25,6 +40,40 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Student work is required', debug: debugLog },
         { status: 400 }
+      );
+    }
+    
+    // Check if user has enough tokens
+    debugLog.push('Checking token balance');
+    const userTokenData = await getUserTokens(userId);
+    
+    if (!userTokenData) {
+      debugLog.push('User token data not found');
+      return NextResponse.json(
+        { error: 'Unable to retrieve token information. Please try again.', debug: debugLog },
+        { status: 403 }
+      );
+    }
+    
+    // Calculate tokens needed for this grading operation
+    // We add the content length of both student work and rubric
+    const combinedContent = studentWork + (rubric || '');
+    const tokensNeeded = calculateTokens(combinedContent);
+    
+    debugLog.push(`Token calculation: ${tokensNeeded} tokens needed, user has ${userTokenData} tokens`);
+    
+    // Check if user has enough tokens
+    if (userTokenData < tokensNeeded) {
+      debugLog.push('Insufficient tokens');
+      return NextResponse.json(
+        { 
+          error: 'Insufficient tokens for grading. Please purchase more tokens.', 
+          insufficientTokens: true,
+          tokensNeeded,
+          tokensAvailable: userTokenData,
+          debug: debugLog 
+        },
+        { status: 403 }
       );
     }
 
@@ -110,13 +159,53 @@ export async function POST(request: Request) {
       const duration = Date.now() - openaiCallStart;
       debugLog.push(`OpenAI grading call successful (${duration}ms)`);
       
+      const gradeResult = response.content;
+      
+      // Store the grade in S3 if we have a fileKey
+      let gradeStorageResult = null;
+      if (fileKey) {
+        try {
+          debugLog.push(`Storing grade for file ${fileKey}`);
+          
+          // Get the current user to access their username
+          const user = await currentUser();
+          const username = user?.username || user?.firstName?.toLowerCase() || userId;
+          
+          gradeStorageResult = await storeGradeResult(
+            fileKey,
+            userId,
+            gradeResult as string,
+            rubric || 'Grade on clarity, organization, and accuracy.',
+            username
+          );
+          debugLog.push('Grade stored successfully');
+        } catch (storageError: any) {
+          debugLog.push(`Warning: Failed to store grade: ${storageError.message}`);
+          // Continue execution even if storage fails
+        }
+      } else {
+        debugLog.push('No fileKey provided, skipping grade storage');
+      }
+      
+      // Deduct tokens from user's account
+      try {
+        debugLog.push(`Using ${tokensNeeded} tokens from user account`);
+        await useUserTokens(userId, tokensNeeded);
+        debugLog.push('Tokens deducted successfully');
+      } catch (tokenError: any) {
+        debugLog.push(`Warning: Failed to deduct tokens: ${tokenError.message}`);
+        // Continue execution even if token deduction fails
+      }
+      
       // Return the result
       const totalTime = Date.now() - requestStartTime;
       debugLog.push(`API route completed successfully in ${totalTime}ms`);
       return NextResponse.json({ 
-        result: response.content,
+        result: gradeResult,
         detectedType,
         processingTime: totalTime,
+        gradeStored: !!gradeStorageResult,
+        tokensUsed: tokensNeeded,
         debug: debugLog
       });
     } catch (error: any) {
