@@ -1,39 +1,39 @@
 import { NextResponse } from 'next/server';
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import type { NextRequest } from 'next/server';
 
-// Define protected routes
-const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)', 
-  '/assignments(.*)', 
-  '/grade(.*)', 
-  '/tokens(.*)',
-  '/analytics(.*)',
-  '/settings(.*)',
-  '/help(.*)',
-  '/test-upload(.*)'
-]);
-
-// Use the middleware from Clerk
-export default clerkMiddleware(async (auth, req) => {
-  try {
-    if (isProtectedRoute(req)) {
-      await auth.protect();
-    }
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Clerk middleware error:', error);
-    // Handle authentication errors gracefully
-    if (isProtectedRoute(req)) {
-      return NextResponse.redirect(new URL('/sign-in', req.url));
-    }
+// This middleware is simplified to completely avoid Clerk header issues
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  
+  // Define public routes
+  const publicRoutes = ['/', '/login', '/signup'];
+  
+  // Skip API routes completely to avoid authorization header issues
+  if (path.startsWith('/api')) {
     return NextResponse.next();
   }
-});
+  
+  // Skip public routes
+  if (publicRoutes.some(route => path === route)) {
+    return NextResponse.next();
+  }
+  
+  // For protected routes, check for session cookie
+  // This is intentionally basic to avoid header parsing issues
+  const hasClerkSession = request.cookies.has('__session') || 
+                         request.cookies.has('__clerk_db_jwt');
+  
+  if (!hasClerkSession) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+  
+  return NextResponse.next();
+}
 
-// Important: This configuration ensures we don't run the middleware on API routes
-// which prevents the multi-byte character issues with Authorization headers
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // Skip static files and API routes 
+    '/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
 }; 
