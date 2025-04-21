@@ -6,7 +6,7 @@ import { detectSubmissionType } from '../../lib/contentAnalyzer';
 import { classifySubmissionType } from '../../lib/classificationAgent';
 import { codeGradingPrompt, essayGradingPrompt, defaultGradingPrompt } from '../../lib/prompts';
 import { storeGradeResult } from '../../lib/s3';
-import { getUserTokens, useUserTokens, calculateTokens } from '../../lib/dynamo';
+import { getUserTokens, spendUserTokens, calculateTokens } from '../../lib/dynamo';
 import { currentUser } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       // Deduct tokens from user's account
       try {
         debugLog.push(`Using ${tokensNeeded} tokens from user account`);
-        await useUserTokens(userId, tokensNeeded);
+        await spendUserTokens(userId, tokensNeeded);
         debugLog.push('Tokens deducted successfully');
       } catch (tokenError: any) {
         debugLog.push(`Warning: Failed to deduct tokens: ${tokenError.message}`);

@@ -123,7 +123,7 @@ export async function addUserTokens(userId: string, amount: number): Promise<num
  * @param amount The amount of tokens to use
  * @returns The new token balance or null if an error occurred (e.g., insufficient tokens)
  */
-export async function useUserTokens(userId: string, amount: number): Promise<number | null> {
+export async function spendUserTokens(userId: string, amount: number): Promise<number | null> {
   if (amount <= 0) {
     return null;
   }

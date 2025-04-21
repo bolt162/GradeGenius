@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { useUserTokens, getUserTokens } from '@/app/lib/dynamo';
+import { spendUserTokens, getUserTokens } from '@/app/lib/dynamo';
 
 /**
  * Use tokens for grading or other feature usage
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Use tokens from the user's account
-    const remainingTokens = await useUserTokens(userId, tokenAmount);
+    const remainingTokens = await spendUserTokens(userId, tokenAmount);
     
     return NextResponse.json({
       success: true,
