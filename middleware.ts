@@ -15,20 +15,25 @@ const isProtectedRoute = createRouteMatcher([
 
 // Use the middleware from Clerk
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+  try {
+    if (isProtectedRoute(req)) {
+      await auth.protect();
+    }
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Clerk middleware error:', error);
+    // Handle authentication errors gracefully
+    if (isProtectedRoute(req)) {
+      return NextResponse.redirect(new URL('/sign-in', req.url));
+    }
+    return NextResponse.next();
   }
 });
 
+// Important: This configuration ensures we don't run the middleware on API routes
+// which prevents the multi-byte character issues with Authorization headers
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }; 
