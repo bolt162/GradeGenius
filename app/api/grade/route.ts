@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { auth } from '@clerk/nextjs/server';
@@ -9,7 +9,7 @@ import { storeGradeResult } from '../../lib/s3';
 import { getUserTokens, useUserTokens, calculateTokens } from '../../lib/dynamo';
 import { currentUser } from '@clerk/nextjs/server';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   console.log('BACKEND: API route handler started');
   const requestStartTime = Date.now();
   

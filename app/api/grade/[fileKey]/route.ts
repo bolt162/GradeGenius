@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { getGradeResult } from '@/app/lib/s3';
 
-export async function GET(request: Request, { params }: { params: { fileKey: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: { fileKey: string } }
+) {
   try {
     // Check auth
     const authObject = await auth();
@@ -16,7 +19,7 @@ export async function GET(request: Request, { params }: { params: { fileKey: str
     }
     
     // Get the fileKey from the URL params
-    const { fileKey } = params;
+    const { fileKey } = context.params;
     
     if (!fileKey) {
       return NextResponse.json(

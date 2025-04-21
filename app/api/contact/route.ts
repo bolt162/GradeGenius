@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import nodemailer from 'nodemailer';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Check authentication - make it optional for public contact form
     const { userId } = await auth();

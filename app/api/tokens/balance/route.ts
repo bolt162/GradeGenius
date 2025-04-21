@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { getUserTokens } from '@/app/lib/dynamo';
 
 // Initialize DynamoDB client
 const client = new DynamoDB({
@@ -14,7 +15,7 @@ const client = new DynamoDB({
 
 const ddbDocClient = DynamoDBDocument.from(client);
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     // Check authentication
     const { userId } = await auth();

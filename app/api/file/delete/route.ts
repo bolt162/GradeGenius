@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { deleteFile } from '@/app/lib/s3';
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     // Parse URL parameters
     const url = new URL(request.url);
