@@ -1,17 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { getGradeResult } from '@/app/lib/s3';
+import { getAuthFromCookies } from '@/app/lib/auth-utils';
 
 export async function GET(
   request: NextRequest,
   context: { params: { fileKey: string } }
 ) {
   try {
-    // Check auth
-    const authObject = await auth();
-    const userId = authObject.userId;
+    // Use our custom cookie-based auth instead of Clerk
+    const auth = await getAuthFromCookies();
     
-    if (!userId) {
+    if (!auth.isAuthenticated) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -31,9 +30,9 @@ export async function GET(
     // Decode the fileKey (since it's part of the URL)
     const decodedKey = decodeURIComponent(fileKey);
     
-    // Get the current user to access their username
-    const user = await currentUser();
-    const username = user?.username || user?.firstName?.toLowerCase() || userId;
+    // Use username from our auth utils
+    const userId = auth.userId;
+    const username = auth.username;
     
     // Get grade result from S3 using username for path
     const gradeResult = await getGradeResult(decodedKey, userId, username);

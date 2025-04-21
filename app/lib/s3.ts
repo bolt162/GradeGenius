@@ -102,8 +102,19 @@ export async function listUserFiles(userId: string, isUsername: boolean = false)
       return [];
     }
     
+    // Filter out files from the grades subfolder
+    const assignmentFiles = Contents.filter(item => {
+      const key = item.Key || '';
+      // Exclude files in the grades subfolder
+      return !key.includes(`${userId}/grades/`);
+    });
+    
+    if (assignmentFiles.length === 0) {
+      return [];
+    }
+    
     // Map S3 objects to a more user-friendly format
-    const files = await Promise.all(Contents.map(async (item) => {
+    const files = await Promise.all(assignmentFiles.map(async (item) => {
       const key = item.Key || '';
       const urlExpiresIn = 3600; // 1 hour
       
