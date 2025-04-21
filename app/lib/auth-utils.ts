@@ -11,8 +11,8 @@ interface AuthData {
  * This is a workaround for Clerk authentication issues in API routes
  */
 export async function getAuthFromCookies(): Promise<AuthData> {
-  // Get cookies
-  const cookieStore = cookies();
+  // Get cookies - await for Next.js 15 compatibility
+  const cookieStore = await cookies();
   
   // Check for clerk session cookies
   const sessionCookie = cookieStore.get('__session');

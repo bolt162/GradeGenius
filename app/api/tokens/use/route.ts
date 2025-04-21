@@ -1,21 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { spendUserTokens, getUserTokens } from '@/app/lib/dynamo';
+import { cookies } from 'next/headers';
 
 /**
  * Use tokens for grading or other feature usage
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const authObject = await auth();
-    const userId = authObject.userId;
+    // Manual check for authentication using cookies
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+    const clerkDbJwtCookie = cookieStore.get('__clerk_db_jwt');
     
-    if (!userId) {
+    // If no cookies are present, the user is not authenticated
+    if (!sessionCookie && !clerkDbJwtCookie) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
       );
+    }
+    
+    // Extract userId from cookie
+    let userId = 'default_user';
+    
+    try {
+      // Try to extract userId from session cookie if available
+      if (sessionCookie?.value) {
+        const parts = sessionCookie.value.split('.');
+        if (parts.length >= 2) {
+          const payload = JSON.parse(
+            Buffer.from(parts[1], 'base64').toString()
+          );
+          if (payload.sub) {
+            userId = payload.sub;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing session cookie:', e);
     }
     
     // Get request body

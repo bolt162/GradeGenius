@@ -1,11 +1,31 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import nodemailer from 'nodemailer';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication - make it optional for public contact form
-    const { userId } = await auth();
+    // Manual check for authentication using cookies
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+    const clerkDbJwtCookie = cookieStore.get('__clerk_db_jwt');
+    
+    // Extract userId from cookie (optional for contact form)
+    let userId = null;
+    
+    try {
+      // Try to extract userId from session cookie if available
+      if (sessionCookie?.value) {
+        const parts = sessionCookie.value.split('.');
+        if (parts.length >= 2) {
+          const payload = JSON.parse(
+            Buffer.from(parts[1], 'base64').toString()
+          );
+          userId = payload.sub || null;
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing session cookie:', e);
+    }
     
     // Parse request body
     const body = await request.json();

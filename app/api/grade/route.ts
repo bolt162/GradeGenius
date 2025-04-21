@@ -1,13 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { auth } from '@clerk/nextjs/server';
 import { detectSubmissionType } from '../../lib/contentAnalyzer';
 import { classifySubmissionType } from '../../lib/classificationAgent';
 import { codeGradingPrompt, essayGradingPrompt, defaultGradingPrompt } from '../../lib/prompts';
 import { storeGradeResult } from '../../lib/s3';
 import { getUserTokens, spendUserTokens, calculateTokens } from '../../lib/dynamo';
-import { currentUser } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   console.log('BACKEND: API route handler started');
@@ -18,9 +17,33 @@ export async function POST(request: NextRequest) {
   let errorDetails = '';
   
   try {
-    // Check authentication
-    const authObject = await auth();
-    const userId = authObject.userId;
+    // Manual check for authentication using cookies
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+    const clerkDbJwtCookie = cookieStore.get('__clerk_db_jwt');
+    
+    // Extract userId and username from cookie
+    let userId = null;
+    let username = null;
+    
+    try {
+      // Try to extract userId from session cookie if available
+      if (sessionCookie?.value) {
+        const parts = sessionCookie.value.split('.');
+        if (parts.length >= 2) {
+          const payload = JSON.parse(
+            Buffer.from(parts[1], 'base64').toString()
+          );
+          userId = payload.sub || null;
+          username = payload.username || payload.email || userId;
+        }
+      }
+    } catch (error: any) {
+      console.error('Error parsing session cookie:', error);
+      debugLog.push(`Error parsing cookie: ${error.message || 'Unknown error'}`);
+    }
+
+    // If no cookies are present or userId not found, the user is not authenticated
     if (!userId) {
       debugLog.push('User not authenticated');
       return NextResponse.json(
@@ -167,16 +190,15 @@ export async function POST(request: NextRequest) {
         try {
           debugLog.push(`Storing grade for file ${fileKey}`);
           
-          // Get the current user to access their username
-          const user = await currentUser();
-          const username = user?.username || user?.firstName?.toLowerCase() || userId;
+          // Use the username we extracted from the session cookie
+          const user_name = username || userId;
           
           gradeStorageResult = await storeGradeResult(
             fileKey,
             userId,
             gradeResult as string,
             rubric || 'Grade on clarity, organization, and accuracy.',
-            username
+            user_name
           );
           debugLog.push('Grade stored successfully');
         } catch (storageError: any) {

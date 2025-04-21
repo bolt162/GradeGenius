@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 export async function GET(request: NextRequest) {
   try {
     // Manual check for authentication using cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('__session');
     const clerkDbJwtCookie = cookieStore.get('__clerk_db_jwt');
     

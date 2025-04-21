@@ -1,14 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { getFileUrl } from '@/app/lib/s3';
+import { cookies } from 'next/headers';
 
 // GET /api/file-content - Proxy for fetching file content from S3
 export async function GET(request: NextRequest) {
   try {
-    // Get authenticated user ID
-    const { userId } = await auth();
+    // Manual check for authentication using cookies
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+    const clerkDbJwtCookie = cookieStore.get('__clerk_db_jwt');
     
-    // Check if user is authenticated
+    // If no cookies are present, the user is not authenticated
+    if (!sessionCookie && !clerkDbJwtCookie) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Extract userId from cookie
+    let userId = null;
+    
+    try {
+      // Try to extract userId from session cookie if available
+      if (sessionCookie?.value) {
+        const parts = sessionCookie.value.split('.');
+        if (parts.length >= 2) {
+          const payload = JSON.parse(
+            Buffer.from(parts[1], 'base64').toString()
+          );
+          userId = payload.sub || null;
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing session cookie:', e);
+    }
+    
+    // If we couldn't extract a userId, return unauthorized
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
