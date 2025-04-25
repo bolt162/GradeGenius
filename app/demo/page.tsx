@@ -30,12 +30,8 @@ export default function DemoPage() {
       setDetectedType(undefined);
       setDebugInfo([]);
       
-      console.log('FRONTEND: About to make API request to /api/grade');
-      console.log('FRONTEND: Submission type:', submissionType || 'auto-detect');
-      console.log('FRONTEND: Content length:', studentWork.length);
-      
       const startTime = Date.now();
-      const res = await fetch('/api/grade', {
+      const res = await fetch('/api/grade?demo=true', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,39 +40,32 @@ export default function DemoPage() {
           studentWork,
           rubric: rubric || 'Grade on clarity, organization, and accuracy.',
           submissionType,
+          demo: true,
         }),
       });
       
       const requestTime = Date.now() - startTime;
-      console.log(`FRONTEND: API request completed in ${requestTime}ms with status: ${res.status}`);
-      
       const data = await res.json();
       
       // Check for error response
       if (!res.ok) {
-        console.error('FRONTEND: API request failed with status:', res.status);
         setError(data.error || `Failed to get response from AI (Status: ${res.status})`);
         
         // Display debug info if available
         if (data.debug && Array.isArray(data.debug)) {
-          console.log('FRONTEND: Debug info received:', data.debug);
           setDebugInfo(data.debug);
         }
         return;
       }
-
-      console.log('FRONTEND: API response received successfully');
       
       // Save debug info but don't display it
       if (data.debug && Array.isArray(data.debug)) {
-        console.log('FRONTEND: Debug info received:', data.debug);
         setDebugInfo(data.debug);
       }
       
       setResponse(data.result);
       setDetectedType(data.detectedType);
     } catch (err) {
-      console.error('FRONTEND ERROR:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);

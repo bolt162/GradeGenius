@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Inactivity timeout in milliseconds (15 minutes)
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
+
 // Function to check if a JWT token is potentially valid
 function isValidJwt(token: string): boolean {
   try {
@@ -49,6 +52,17 @@ export async function middleware(request: NextRequest) {
 
   // List of public routes that don't require authentication
   const publicRoutes = ['/', '/login', '/signup', '/sign-in', '/sign-up'];
+  
+  // Check if this is a demo route
+  const isDemoRoute = request.nextUrl.pathname.includes('/demo') || 
+                       request.nextUrl.searchParams.has('demo') ||
+                       request.nextUrl.pathname === '/grade' && request.nextUrl.searchParams.has('demo');
+  
+  if (isDemoRoute) {
+    console.log('Demo route detected, allowing access without authentication');
+    return NextResponse.next();
+  }
+  
   if (publicRoutes.some(route => request.nextUrl.pathname === route)) {
     console.log('Public route detected, allowing access');
     return NextResponse.next();
@@ -85,7 +99,33 @@ export async function middleware(request: NextRequest) {
   const clerkDbJwtCookie = request.cookies.get('__clerk_db_jwt')?.value;
   const clerkCookie = request.cookies.get('__clerk')?.value;
   
+  // Get the last activity timestamp from cookie
+  const lastActivityCookie = request.cookies.get('last_activity')?.value;
+  let lastActivity = lastActivityCookie ? parseInt(lastActivityCookie, 10) : 0;
+  
   console.log(`Found cookies: __session=${!!sessionCookie}, __clerk_db_jwt=${!!clerkDbJwtCookie}, __clerk=${!!clerkCookie}`);
+  console.log(`Last activity: ${lastActivity ? new Date(lastActivity).toISOString() : 'never'}`);
+  
+  // Check if the user has been inactive for too long
+  const now = Date.now();
+  if (lastActivity && (now - lastActivity > INACTIVITY_TIMEOUT)) {
+    console.log(`User inactive for ${(now - lastActivity) / 1000 / 60} minutes, logging out`);
+    
+    // Create login URL with the signout parameter
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('forceSignOut', 'true');
+    
+    // User has been inactive too long, clear cookies and redirect to login
+    const response = NextResponse.redirect(loginUrl);
+    
+    // Clear all cookies
+    response.cookies.delete('__session');
+    response.cookies.delete('__clerk_db_jwt');
+    response.cookies.delete('__clerk');
+    response.cookies.delete('last_activity');
+    
+    return response;
+  }
   
   // Validate the JWT tokens if they exist
   let hasValidSession = false;
@@ -104,19 +144,33 @@ export async function middleware(request: NextRequest) {
   if (!hasValidSession) {
     console.log('No valid session found, redirecting to login');
     
+    // Create login URL with the signout parameter
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('forceSignOut', 'true');
+    
     // Clear any potentially invalid cookies
-    const response = NextResponse.redirect(new URL('/login', request.url));
+    const response = NextResponse.redirect(loginUrl);
     
     // Clear all Clerk cookies
     response.cookies.delete('__session');
     response.cookies.delete('__clerk_db_jwt');
     response.cookies.delete('__clerk');
+    response.cookies.delete('last_activity');
     
     return response;
   }
 
   console.log('Valid session found, allowing access');
-  return NextResponse.next();
+  
+  // Update the last activity timestamp
+  const response = NextResponse.next();
+  response.cookies.set('last_activity', now.toString(), {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax'
+  });
+  
+  return response;
 }
 
 // Update matcher to explicitly include all our protected routes
@@ -143,5 +197,7 @@ export const config = {
     '/signup',
     '/sign-in',
     '/sign-up',
+    '/demo',
+    '/demo/:path*',
   ]
 }; 

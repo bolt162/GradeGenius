@@ -3,22 +3,51 @@
 import Navigation from '../components/Navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
-import { useSignIn } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useSignIn, useClerk } from '@clerk/nextjs';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const { signIn, isLoaded, setActive } = useSignIn();
+  const { signOut } = useClerk();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  // Check if we need to force sign out the user
+  useEffect(() => {
+    const forceSignOut = searchParams.get('forceSignOut');
+    
+    if (forceSignOut === 'true' && isLoaded && !isSigningOut) {
+      const performSignOut = async () => {
+        try {
+          setIsSigningOut(true);
+          console.log('Force signing out user...');
+          await signOut();
+          console.log('User signed out successfully');
+          // Clear query params but stay on login page
+          const url = new URL(window.location.href);
+          url.searchParams.delete('forceSignOut');
+          window.history.replaceState({}, '', url);
+        } catch (err) {
+          console.error('Error signing out:', err);
+        } finally {
+          setIsSigningOut(false);
+        }
+      };
+      
+      performSignOut();
+    }
+  }, [isLoaded, searchParams, signOut, isSigningOut]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isLoaded) {
+    if (!isLoaded || isSigningOut) {
       return;
     }
 
@@ -75,6 +104,12 @@ export default function LoginPage() {
               </div>
             )}
 
+            {isSigningOut && (
+              <div className="mb-4 p-3 bg-blue-100 border border-blue-300 text-blue-700 rounded">
+                Signing out previous session...
+              </div>
+            )}
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
@@ -89,6 +124,7 @@ export default function LoginPage() {
                   className="mt-1 block w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-black placeholder-neutral-600"
                   placeholder="Enter your email"
                   required
+                  disabled={isSigningOut}
                 />
               </div>
 
@@ -105,6 +141,7 @@ export default function LoginPage() {
                   className="mt-1 block w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-black placeholder-neutral-600"
                   placeholder="Enter your password"
                   required
+                  disabled={isSigningOut}
                 />
               </div>
 
@@ -115,6 +152,7 @@ export default function LoginPage() {
                     name="remember-me"
                     type="checkbox"
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-600 border-neutral-300 rounded"
+                    disabled={isSigningOut}
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-neutral-700">
                     Remember me
@@ -130,10 +168,10 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={isLoading || !isLoaded}
+                disabled={isLoading || !isLoaded || isSigningOut}
                 className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:opacity-70"
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? 'Signing in...' : isSigningOut ? 'Please wait...' : 'Sign in'}
               </button>
             </form>
 
