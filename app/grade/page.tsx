@@ -58,16 +58,13 @@ function GradePageContent() {
     setError(null);
     
     try {
-      console.log(`Fetching details for file: ${key}`);
       const response = await fetch(`/api/file?key=${encodeURIComponent(key)}`);
       
       if (!response.ok) {
-        console.error(`API response not OK: ${response.status} ${response.statusText}`);
         throw new Error(`Failed to fetch file details: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('File details received:', data);
       
       if (data.file) {
         setFileUrl(data.file.url);
@@ -76,7 +73,6 @@ function GradePageContent() {
         
         // Fetch file content if it's a text file
         if (data.file.contentType && data.file.contentType.startsWith('text/')) {
-          console.log(`Fetching content through proxy for file: ${key}`);
           try {
             // Use our proxy endpoint instead of direct S3 URL
             const contentResponse = await fetch(`/api/file-content?key=${encodeURIComponent(key)}`);
@@ -85,22 +81,18 @@ function GradePageContent() {
               const textContent = await contentResponse.text();
               setFileContent(textContent);
             } else {
-              console.error(`Content fetch failed: ${contentResponse.status} ${contentResponse.statusText}`);
               // Don't throw here, we'll show the file download link instead
+              setError(`Couldn't load file content (${contentResponse.status}). You can still grade it.`);
             }
           } catch (contentError) {
-            console.error('Error fetching file content:', contentError);
             // Continue execution, we'll show the file download link
+            setError("Couldn't load file content. You can still grade it.");
           }
-        } else {
-          console.log(`File is not text type (${data.file.contentType}), skipping content fetch`);
         }
       } else {
-        console.error('Response had no file field:', data);
         throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.error('Error fetching file details:', error);
       setError('Failed to load file details. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -144,7 +136,6 @@ function GradePageContent() {
         setFileUrl(data.file.url);
         setFileName(data.file.name);
         setUploadedFileKey(data.file.key); // Store the uploaded file key
-        console.log('Setting uploaded file key:', data.file.key);
         
         // Try to get the content for text files
         if (file.type.startsWith('text/')) {
@@ -159,7 +150,6 @@ function GradePageContent() {
       // Reset form
       event.target.value = '';
     } catch (error) {
-      console.error('Error uploading file:', error);
       setUploadStatus('error');
       setUploadMessage('Failed to upload file. Please try again.');
     }
@@ -186,8 +176,6 @@ function GradePageContent() {
     const fileKeyToUse = activeTab === 0 ? (uploadedFileKey || fileKeyParam) : null;
     
     try {
-      console.log('Grading with fileKey:', fileKeyToUse); // Debug log
-      
       const response = await fetch('/api/grade', {
         method: 'POST',
         headers: {
@@ -235,7 +223,6 @@ function GradePageContent() {
         setUploadMessage('Warning: Unable to save grade to your assignment history.');
       }
     } catch (error: any) {
-      console.error('Grading error:', error);
       setError(error.message || 'An error occurred during grading. Please try again.');
     } finally {
       setIsGrading(false);
