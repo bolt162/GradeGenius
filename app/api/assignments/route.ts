@@ -1,39 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listUserFiles } from '@/app/lib/s3';
-import { cookies } from 'next/headers';
+import { getAuthFromCookies } from '@/app/lib/auth-utils';
 
 // GET /api/assignments - Get all assignments for current user
 export async function GET(request: NextRequest) {
   try {
-    // Manual check for authentication using cookies
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('__session');
-    const clerkDbJwtCookie = cookieStore.get('__clerk_db_jwt');
+    // Get authentication info from cookies
+    const { isAuthenticated, userId, username } = await getAuthFromCookies();
     
-    // If no cookies are present, the user is not authenticated
-    if (!sessionCookie && !clerkDbJwtCookie) {
+    // If not authenticated, return 401
+    if (!isAuthenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Hardcoded default username/userId as fallback
-    let userId = 'default_user';
-    let username = 'default_user';
-    
-    try {
-      // Try to extract userId and username from the session cookie
-      if (sessionCookie?.value) {
-        const parts = sessionCookie.value.split('.');
-        if (parts.length >= 2) {
-          // Parse JWT payload (simplified, not secure for production)
-          const payload = JSON.parse(
-            Buffer.from(parts[1], 'base64').toString()
-          );
-          userId = payload.sub || userId;
-          username = payload.username || payload.email || userId;
-        }
-      }
-    } catch (e) {
-      console.error('Error parsing session cookie:', e);
     }
 
     try {

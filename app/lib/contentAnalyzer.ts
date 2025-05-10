@@ -43,6 +43,26 @@ const CODE_PATTERNS = [
   /[();]{5,}/,  // Multiple parentheses/semicolons
 ];
 
+// Patterns that indicate a document/essay
+const DOCUMENT_PATTERNS = [
+  // Common document sections
+  /^(introduction|abstract|conclusion|references|bibliography|appendix)/im,
+  /^(dear|sincerely|regards|yours truly|best regards)/im,
+  /^(mr\.|mrs\.|ms\.|dr\.|professor)/im,
+  
+  // Document formatting
+  /^[a-z][a-z\s]{10,}\n/im,  // Lines starting with lowercase (likely paragraphs)
+  /^[A-Z][a-z\s]{10,}\n/im,  // Lines starting with uppercase (likely paragraphs)
+  
+  // Common document elements
+  /(page|section|chapter)\s+\d+/i,
+  /(figure|table)\s+\d+/i,
+  
+  // Document-specific punctuation
+  /[""']/g,  // Smart quotes
+  /[–—]/g,   // Em and en dashes
+];
+
 /**
  * Detects if content appears to be code
  * @param content Text content to analyze
@@ -83,6 +103,31 @@ export function isCodeSubmission(content: string): boolean {
 }
 
 /**
+ * Detects if content appears to be a document/essay
+ * @param content Text content to analyze
+ * @returns True if content appears to be a document
+ */
+export function isDocumentSubmission(content: string): boolean {
+  // Check for document patterns
+  for (const pattern of DOCUMENT_PATTERNS) {
+    if (pattern.test(content)) {
+      return true;
+    }
+  }
+  
+  // Check for natural language characteristics
+  const sentences = content.match(/[.!?]+/g) || [];
+  const words = content.match(/\b\w+\b/g) || [];
+  
+  // If we have a good number of sentences and words, likely a document
+  if (sentences.length > 3 && words.length > 50) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Determines the submission type based on content analysis
  * @param content Text content to analyze
  * @param explicitType Optional explicit type override
@@ -92,5 +137,13 @@ export function detectSubmissionType(content: string, explicitType?: string): 'c
   if (explicitType === 'code') return 'code';
   if (explicitType === 'essay') return 'essay';
   
-  return isCodeSubmission(content) ? 'code' : 'essay';
+  // First check if it's a document/essay
+  
+  // Then check if it's code
+  if (isCodeSubmission(content)) {
+    return 'code';
+  }
+  
+  // Default to essay for unknown types
+  return 'essay';
 } 

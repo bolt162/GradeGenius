@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,22 +29,53 @@ import {
   User,
   LogOut,
   Upload,
-  Coins
+  Coins,
+  ClipboardList
 } from 'lucide-react';
 import TokenDisplay from './TokenDisplay';
 
 interface LayoutProps {
   children: React.ReactNode;
-  activePage?: 'dashboard' | 'assignments' | 'students' | 'analytics' | 'settings' | 'help';
+  activePage?: 'dashboard' | 'assignments' | 'students' | 'analytics' | 'rubrics' | 'settings' | 'help';
 }
 
 export default function Layout({ children, activePage = 'dashboard' }: LayoutProps) {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+
+  // Check authentication on load
+  useEffect(() => {
+    if (isLoaded) {
+      // If user is not signed in, redirect to login
+      if (!isSignedIn) {
+        // Redirect with forceSignOut to clear any invalid cookies
+        router.push('/login?forceSignOut=true');
+        return;
+      }
+      
+      // Also check if cookies exist as a backup check
+      checkCookies();
+      
+      setIsAuthChecked(true);
+    }
+  }, [isLoaded, isSignedIn, router]);
+  
+  // Extra validation - check if cookies exist
+  const checkCookies = () => {
+    // Check for session cookies
+    const hasCookies = document.cookie.includes('__session') || 
+                      document.cookie.includes('__clerk_db_jwt');
+    
+    if (!hasCookies) {
+      console.log('No auth cookies found, redirecting to login');
+      router.push('/login?forceSignOut=true');
+    }
+  };
 
   // Toggle sidebar
   const toggleSidebar = () => {
@@ -65,9 +96,27 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
   // Handle sign out
   const handleSignOut = () => {
     signOut().then(() => {
+      // Clear cookies
+      document.cookie = '__session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = '__clerk_db_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = '__clerk=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'last_activity=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      
       router.push('/');
     });
   };
+
+  // If auth check is not complete, show loading
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mx-auto"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -82,8 +131,10 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
               <Menu size={24} />
             </button>
             <div className="flex items-center">
-              <span className="text-indigo-600 text-xl font-bold mr-1">Grade</span>
-              <span className="text-xl font-bold">Genius</span>
+              <Link href="/" className="flex items-center">
+                <span className="text-indigo-600 text-xl font-bold mr-1">Grade</span>
+                <span className="text-xl font-bold">Genius</span>
+              </Link>
             </div>
           </div>
           
@@ -110,9 +161,9 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
                 className="flex items-center space-x-2"
               >
                 <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
-                  {user?.firstName?.charAt(0) || user?.lastName?.charAt(0) || 'U'}
+                  {user?.username?.charAt(0) || 'U'}
                 </div>
-                <span className="hidden md:block">{user?.firstName || 'User'}</span>
+                <span className="hidden md:block">{user?.username || 'User'}</span>
                 <ChevronDown size={16} />
               </button>
               
@@ -172,6 +223,14 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             </Link>
             
             <Link
+              href="/rubrics"
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'rubrics' ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-indigo-50 text-indigo-600') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+            >
+              <ClipboardList size={20} />
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Rubrics</span>
+            </Link>
+            
+            <Link
               href="/tokens"
               className={`flex items-center py-3 px-3 rounded-md ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
@@ -227,7 +286,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
           <div className="flex space-x-4">
             <Link href="/privacy" className="text-sm hover:underline">Privacy Policy</Link>
             <Link href="/terms" className="text-sm hover:underline">Terms of Service</Link>
-            <Link href="/contact" className="text-sm hover:underline">Contact</Link>
+            <Link href="/#contact" className="text-sm hover:underline">Contact</Link>
           </div>
         </div>
       </footer>

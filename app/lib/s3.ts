@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
+import mammoth from 'mammoth';
 
 // Initialize S3 client
 const s3Client = new S3Client({
@@ -33,7 +34,8 @@ export async function uploadFile(
   // Generate a unique file name to avoid collisions
   // Use username in the path if provided, otherwise use userId
   const folderName = username || userId;
-  const fileKey = `${folderName}/${fileName}`;
+  // Store in the assignments subfolder
+  const fileKey = `${folderName}/assignments/${fileName}`;
   
   // Upload to S3
   const uploadParams = {
@@ -88,7 +90,8 @@ export async function getFileUrl(fileKey: string) {
  * @returns Array of file objects
  */
 export async function listUserFiles(userId: string, isUsername: boolean = false) {
-  const prefix = `${userId}/`;
+  // Look specifically in the assignments subfolder
+  const prefix = `${userId}/assignments/`;
   
   const command = new ListObjectsV2Command({
     Bucket: bucketName,
@@ -102,23 +105,12 @@ export async function listUserFiles(userId: string, isUsername: boolean = false)
       return [];
     }
     
-    // Filter out files from the grades subfolder
-    const assignmentFiles = Contents.filter(item => {
-      const key = item.Key || '';
-      // Exclude files in the grades subfolder
-      return !key.includes(`${userId}/grades/`);
-    });
-    
-    if (assignmentFiles.length === 0) {
-      return [];
-    }
-    
     // Map S3 objects to a more user-friendly format
-    const files = await Promise.all(assignmentFiles.map(async (item) => {
+    const files = await Promise.all(Contents.map(async (item) => {
       const key = item.Key || '';
       const urlExpiresIn = 3600; // 1 hour
       
-      // Get the filename without the prefix and UUID
+      // Get the filename without the prefix
       const fileName = key.split('/').pop() || '';
       
       return {
@@ -189,8 +181,10 @@ export async function storeGradeResult(
   // Extract the original filename from the fileKey
   const fileName = fileKey.split('/').pop() || 'unknown-file';
   
-  // Get folder name (username takes precedence over userId)
-  const folderName = username || fileKey.split('/')[0] || userId;
+  // Get folder name from the fileKey or fallback to parameters
+  const parts = fileKey.split('/');
+  // The folder name should be the first part of the path
+  const folderName = username || (parts.length > 0 ? parts[0] : userId);
   
   // Create a grading result JSON
   const gradeData = {
@@ -243,11 +237,10 @@ export async function getGradeResult(fileKey: string, userId: string, username?:
   // Extract the original filename from the fileKey
   const fileName = fileKey.split('/').pop() || 'unknown-file';
   
-  // Get folder name from either:
-  // 1. Provided username parameter
-  // 2. First part of the fileKey (which should be the username/userId)
-  // 3. Fall back to userId if all else fails
-  const folderName = username || fileKey.split('/')[0] || userId;
+  // Get folder name from the fileKey or fallback to parameters
+  const parts = fileKey.split('/');
+  // The folder name should be the first part of the path
+  const folderName = username || (parts.length > 0 ? parts[0] : userId);
   
   // Create the grade key
   const gradeKey = `${folderName}/grades/${fileName}-grade.json`;
@@ -299,18 +292,31 @@ export async function listUserGrades(userId: string, username?: string) {
       const key = item.Key || '';
       
       try {
-        // Pass the username to getGradeResult to maintain consistency
-        const gradeResult = await getGradeResult(
-          key.replace(`${folderName}/grades/`, '').replace('-grade.json', ''), 
-          userId,
-          username
-        );
+        // Get the original filename from the grade file name
+        const gradeFileName = key.split('/').pop() || '';
+        // The original file name is the grade file name without the '-grade.json' suffix
+        const originalFileName = gradeFileName.replace('-grade.json', '');
+        
+        // Construct the assignment file key in the new structure
+        const assignmentFileKey = `${folderName}/assignments/${originalFileName}`;
+        
+        // Get the grade result
+        const getCommand = new GetObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        });
+        
+        const response = await s3Client.send(getCommand);
+        // Convert stream to string
+        const bodyContents = await streamToString(response.Body);
+        // Parse the JSON
+        const gradeResult = JSON.parse(bodyContents);
         
         return {
           key,
-          fileKey: gradeResult.fileKey,
+          fileKey: assignmentFileKey, // Use the new assignment path structure
           timestamp: gradeResult.timestamp,
-          fileName: key.split('/').pop()?.replace('-grade.json', '') || '',
+          fileName: originalFileName,
           lastModified: item.LastModified,
         };
       } catch (error) {
@@ -328,15 +334,422 @@ export async function listUserGrades(userId: string, username?: string) {
 }
 
 /**
- * Helper function to convert ReadableStream to string
+ * Get the actual content of a file from S3
+ * @param fileKey The key of the file in S3
+ * @returns The file content as a string
  */
-async function streamToString(stream: any): Promise<string> {
-  if (!stream) return '';
-  
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-    stream.on('error', reject);
-    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+export async function getFileContent(fileKey: string): Promise<string> {
+  console.log('[S3] getFileContent called for file:', fileKey);
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: fileKey,
   });
+  
+  try {
+    console.log('[S3] Sending GetObjectCommand to S3');
+    const response = await s3Client.send(command);
+    if (!response.Body) {
+      console.error('[S3] No content found in S3 response');
+      throw new Error('No content found in S3 response');
+    }
+    
+    // Convert the readable stream to string
+    console.log('[S3] Converting stream to string');
+    const content = await streamToString(response.Body);
+    console.log('[S3] Content retrieved successfully:', {
+      contentLength: content.length,
+      isUrl: content.startsWith('http'),
+      contentSample: content.substring(0, 100)
+    });
+    return content;
+  } catch (error) {
+    console.error('[S3] Error getting file content from S3:', error);
+    throw error;
+  }
+}
+
+/**
+ * Extract text content from document files (docx, doc)
+ * @param fileKey The key of the file in S3
+ * @returns The extracted text content from the document
+ */
+export async function getDocumentContent(fileKey: string): Promise<string> {
+  console.log('[S3] getDocumentContent called for file:', fileKey);
+  
+  // Check if the file is a document type
+  const isDocx = fileKey.toLowerCase().endsWith('.docx');
+  const isDoc = fileKey.toLowerCase().endsWith('.doc');
+  
+  if (!isDocx && !isDoc) {
+    console.log('[S3] File is not a document type, falling back to regular content retrieval');
+    return getFileContent(fileKey);
+  }
+  
+  try {
+    // Get the raw file buffer from S3
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: fileKey,
+    });
+    
+    console.log('[S3] Sending GetObjectCommand to S3 for document');
+    const response = await s3Client.send(command);
+    
+    if (!response.Body) {
+      console.error('[S3] No content found in S3 response');
+      throw new Error('No content found in S3 response');
+    }
+    
+    // Convert the stream to buffer
+    console.log('[S3] Converting stream to buffer');
+    const bodyContents = await streamToBuffer(response.Body);
+    
+    // Extract text from the document using mammoth
+    console.log('[S3] Extracting text from document');
+    let extractedText = '';
+    
+    if (isDocx) {
+      const result = await mammoth.extractRawText({ buffer: bodyContents });
+      extractedText = result.value;
+    } else {
+      // For .doc files, we would need additional handling
+      // This is a placeholder - consider using another library for .doc files
+      console.warn('[S3] .doc format requires additional libraries');
+      extractedText = "This document is in .doc format which requires conversion. Please convert to .docx for better results.";
+    }
+    
+    console.log('[S3] Document content extracted successfully:', {
+      contentLength: extractedText.length,
+      contentSample: extractedText.substring(0, 100)
+    });
+    
+    return extractedText;
+  } catch (error) {
+    console.error('[S3] Error extracting document content from S3:', error);
+    throw error;
+  }
+}
+
+// Helper function to convert stream to string
+async function streamToString(stream: any): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: any[] = [];
+    stream.on('data', (chunk: any) => chunks.push(chunk));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+  });
+}
+
+// Add the streamToBuffer helper function
+async function streamToBuffer(stream: any): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: any[] = [];
+    stream.on('data', (chunk: any) => chunks.push(chunk));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  });
+}
+
+/**
+ * Store a rubric in S3
+ * @param userId User ID of the owner
+ * @param rubricName Name of the rubric
+ * @param rubricData The rubric data object
+ * @param username Optional username to use in the path instead of userId
+ * @returns Object with rubric details
+ */
+export async function storeRubric(
+  userId: string,
+  rubricName: string,
+  rubricData: any,
+  username?: string
+) {
+  // Get folder name (username takes precedence over userId)
+  const folderName = username || userId;
+  
+  // Sanitize the rubric name for use in the filename
+  const sanitizedRubricName = rubricName
+    .toLowerCase()
+    .replace(/[^a-z0-9\-_]/g, '-')
+    .replace(/-{2,}/g, '-');
+  
+  // Create a rubric key in the format: folderName/rubrics/sanitizedRubricName.json
+  const rubricKey = `${folderName}/rubrics/${sanitizedRubricName}.json`;
+  
+  // Prepare the full rubric data with metadata
+  const fullRubricData = {
+    ...rubricData,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    userId
+  };
+  
+  // Upload to S3
+  const uploadParams = {
+    Bucket: bucketName,
+    Key: rubricKey,
+    Body: JSON.stringify(fullRubricData, null, 2),
+    ContentType: 'application/json',
+    Metadata: {
+      userId,
+      rubricName,
+      createdDate: new Date().toISOString(),
+    }
+  };
+  
+  try {
+    await s3Client.send(new PutObjectCommand(uploadParams));
+    
+    // Return rubric details
+    return {
+      key: rubricKey,
+      name: rubricName,
+      createdAt: fullRubricData.createdAt,
+      updatedAt: fullRubricData.updatedAt,
+    };
+  } catch (error) {
+    console.error('Error storing rubric in S3:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get a specific rubric
+ * @param rubricKey The key of the rubric file or just the rubric name
+ * @param userId User ID of the owner
+ * @param username Optional username to use in the path instead of userId
+ * @returns Rubric data object or null if not found
+ */
+export async function getRubric(rubricKey: string, userId: string, username?: string) {
+  // Determine if we got a full S3 key or just a rubric name
+  let fullRubricKey = rubricKey;
+  
+  // If rubricKey doesn't contain slashes, it's probably just the filename
+  if (!rubricKey.includes('/')) {
+    const folderName = username || userId;
+    
+    // Sanitize the rubric name for consistency
+    const sanitizedRubricName = rubricKey
+      .toLowerCase()
+      .replace(/[^a-z0-9\-_]/g, '-')
+      .replace(/-{2,}/g, '-');
+      
+    fullRubricKey = `${folderName}/rubrics/${sanitizedRubricName}.json`;
+  }
+  
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: fullRubricKey,
+  });
+  
+  try {
+    const response = await s3Client.send(command);
+    
+    // Convert stream to string
+    const bodyContents = await streamToString(response.Body);
+    
+    // Parse the JSON
+    return JSON.parse(bodyContents);
+  } catch (error) {
+    console.error('Error retrieving rubric from S3:', error);
+    return null; // Rubric not found
+  }
+}
+
+/**
+ * List all rubrics for a user
+ * @param userId User ID to list rubrics for
+ * @param username Optional username to use in the path instead of userId
+ * @returns Array of rubric objects
+ */
+export async function listUserRubrics(userId: string, username?: string) {
+  // Determine which folder name to use (username takes precedence)
+  const folderName = username || userId;
+  const prefix = `${folderName}/rubrics/`;
+  
+  const command = new ListObjectsV2Command({
+    Bucket: bucketName,
+    Prefix: prefix,
+  });
+  
+  try {
+    const { Contents } = await s3Client.send(command);
+    
+    if (!Contents || Contents.length === 0) {
+      return [];
+    }
+    
+    // Map S3 objects to rubric objects
+    const rubrics = await Promise.all(Contents.map(async (item) => {
+      const key = item.Key || '';
+      
+      try {
+        // Get the filename without the folder prefix and .json extension
+        const fileName = key.split('/').pop() || '';
+        const rubricName = fileName.replace('.json', '');
+        
+        // Get the full rubric data
+        const rubricData = await getRubric(key, userId, username);
+        
+        return {
+          key,
+          name: rubricData.name || rubricName, // Use data.name if available, otherwise filename
+          classLevel: rubricData.classLevel,
+          course: rubricData.course,
+          specialization: rubricData.specialization,
+          createdAt: rubricData.createdAt,
+          updatedAt: rubricData.updatedAt,
+          questionCount: rubricData.questions?.length || 0,
+          lastModified: item.LastModified,
+        };
+      } catch (error) {
+        console.error(`Error processing rubric ${key}:`, error);
+        return null;
+      }
+    }));
+    
+    // Filter out any null values from errors
+    return rubrics.filter(Boolean);
+  } catch (error) {
+    console.error('Error listing rubrics from S3:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update an existing rubric
+ * @param rubricKey The key of the rubric file or just the rubric name
+ * @param userId User ID of the owner
+ * @param rubricData The updated rubric data
+ * @param username Optional username to use in the path instead of userId
+ * @returns Object with updated rubric details
+ */
+export async function updateRubric(
+  rubricKey: string,
+  userId: string,
+  rubricData: any,
+  username?: string
+) {
+  console.log('updateRubric called with params:', {
+    rubricKey,
+    newName: rubricData.name
+  });
+  
+  // Determine if we got a full S3 key or just a rubric name
+  let fullRubricKey = rubricKey;
+  const folderName = username || userId;
+  
+  // If rubricKey doesn't contain slashes, it's probably just the filename
+  if (!rubricKey.includes('/')) {
+    // Sanitize the rubric name for consistency
+    const sanitizedRubricName = rubricKey
+      .toLowerCase()
+      .replace(/[^a-z0-9\-_]/g, '-')
+      .replace(/-{2,}/g, '-');
+      
+    fullRubricKey = `${folderName}/rubrics/${sanitizedRubricName}.json`;
+  }
+  
+  try {
+    // Try to get the existing rubric first to preserve creation date
+    const existingRubric = await getRubric(fullRubricKey, userId, username);
+    
+    if (!existingRubric) {
+      console.log(`No existing rubric found at ${fullRubricKey}, will create new one`);
+    } else {
+      console.log(`Found existing rubric: ${existingRubric.name}`);
+    }
+    
+    // If the name has changed, we'll create a new file with the new name
+    // and return the new key so the caller can delete the old one if needed
+    let updatedRubricKey = fullRubricKey;
+    let nameChanged = false;
+    
+    if (existingRubric && rubricData.name && existingRubric.name !== rubricData.name) {
+      nameChanged = true;
+      console.log(`Rubric name changed from "${existingRubric.name}" to "${rubricData.name}"`);
+      
+      // Generate a new key based on the new name
+      const sanitizedNewName = rubricData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\-_]/g, '-')
+        .replace(/-{2,}/g, '-');
+        
+      updatedRubricKey = `${folderName}/rubrics/${sanitizedNewName}.json`;
+      console.log(`Generated new rubric key based on new name: ${updatedRubricKey}`);
+    }
+    
+    // Prepare the updated rubric data with metadata
+    const updatedRubricData = {
+      ...rubricData,
+      createdAt: existingRubric?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      userId
+    };
+    
+    // If the name changed, we'll write to the new location 
+    const uploadParams = {
+      Bucket: bucketName,
+      Key: nameChanged ? updatedRubricKey : fullRubricKey,
+      Body: JSON.stringify(updatedRubricData, null, 2),
+      ContentType: 'application/json',
+      Metadata: {
+        userId,
+        rubricName: rubricData.name,
+        updatedDate: new Date().toISOString(),
+      }
+    };
+    
+    console.log(`Uploading updated rubric to: ${uploadParams.Key}`);
+    await s3Client.send(new PutObjectCommand(uploadParams));
+    
+    // Return updated rubric details with the key that was used
+    return {
+      key: nameChanged ? updatedRubricKey : fullRubricKey,
+      name: rubricData.name,
+      createdAt: updatedRubricData.createdAt,
+      updatedAt: updatedRubricData.updatedAt,
+    };
+  } catch (error) {
+    console.error('Error updating rubric in S3:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a rubric from S3
+ * @param rubricKey The key of the rubric to delete or just the rubric name
+ * @param userId User ID of the owner
+ * @param username Optional username to use in the path instead of userId
+ * @returns Boolean indicating success
+ */
+export async function deleteRubric(rubricKey: string, userId: string, username?: string) {
+  // Determine if we got a full S3 key or just a rubric name
+  let fullRubricKey = rubricKey;
+  
+  // If rubricKey doesn't contain slashes, it's probably just the filename
+  if (!rubricKey.includes('/')) {
+    const folderName = username || userId;
+    
+    // Sanitize the rubric name for consistency
+    const sanitizedRubricName = rubricKey
+      .toLowerCase()
+      .replace(/[^a-z0-9\-_]/g, '-')
+      .replace(/-{2,}/g, '-');
+      
+    fullRubricKey = `${folderName}/rubrics/${sanitizedRubricName}.json`;
+  }
+  
+  const command = new DeleteObjectCommand({
+    Bucket: bucketName,
+    Key: fullRubricKey,
+  });
+  
+  try {
+    await s3Client.send(command);
+    return true;
+  } catch (error) {
+    console.error('Error deleting rubric from S3:', error);
+    throw error;
+  }
 } 

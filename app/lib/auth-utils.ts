@@ -20,14 +20,14 @@ export async function getAuthFromCookies(): Promise<AuthData> {
   
   // Default authentication state
   const authData: AuthData = {
-    userId: 'default_user',
-    username: 'default_user',
+    userId: '',
+    username: '',
     isAuthenticated: false
   };
   
-  // If any session cookie exists, consider user authenticated
-  if (sessionCookie || clerkDbJwtCookie) {
-    authData.isAuthenticated = true;
+  // If no cookies are present, the user is not authenticated
+  if (!sessionCookie && !clerkDbJwtCookie) {
+    return authData;
   }
   
   try {
@@ -43,7 +43,7 @@ export async function getAuthFromCookies(): Promise<AuthData> {
         // Extract user data from payload
         if (payload.sub) {
           authData.userId = payload.sub;
-        }
+          authData.isAuthenticated = true;
         
         // Try to get username from various payload fields
         authData.username = 
@@ -52,10 +52,34 @@ export async function getAuthFromCookies(): Promise<AuthData> {
           payload.name || 
           payload.firstName || 
           authData.userId;
+        }
+      }
+    } else if (clerkDbJwtCookie?.value) {
+      const parts = clerkDbJwtCookie.value.split('.');
+      if (parts.length >= 2) {
+        // Decode base64 JWT payload
+        const payload = JSON.parse(
+          Buffer.from(parts[1], 'base64').toString()
+        );
+        
+        // Extract user data from payload
+        if (payload.sub) {
+          authData.userId = payload.sub;
+          authData.isAuthenticated = true;
+          
+          // Try to get username from various payload fields
+          authData.username = 
+            payload.username || 
+            payload.email || 
+            payload.name || 
+            payload.firstName || 
+            authData.userId;
+        }
       }
     }
   } catch (e) {
     console.error('Error parsing session cookie:', e);
+    authData.isAuthenticated = false;
   }
   
   return authData;

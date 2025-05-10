@@ -30,6 +30,10 @@ const nextConfig = {
   experimental: {
     // Next.js 15 specific experimental features
   },
+  
+  // Ensure middleware runs on every request
+  skipMiddlewareUrlNormalize: false,
+  skipTrailingSlashRedirect: false,
 };
 
 module.exports = nextConfig; 

@@ -378,14 +378,13 @@ export default function Home() {
               <ul className="space-y-2">
                 <li><Link href="/#about" className="text-indigo-200 hover:text-white">About</Link></li>
                 <li><Link href="/#contact" className="text-indigo-200 hover:text-white">Contact</Link></li>
-                <li><Link href="/#careers" className="text-indigo-200 hover:text-white">Careers</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><Link href="#privacy" className="text-indigo-200 hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="#terms" className="text-indigo-200 hover:text-white">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="text-indigo-200 hover:text-white">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-indigo-200 hover:text-white">Terms of Service</Link></li>
               </ul>
             </div>
           </div>

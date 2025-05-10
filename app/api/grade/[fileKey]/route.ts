@@ -4,7 +4,7 @@ import { getAuthFromCookies } from '@/app/lib/auth-utils';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { fileKey: string } }
+  { params }: { params: unknown }
 ) {
   try {
     // Use our custom cookie-based auth instead of Clerk
@@ -17,8 +17,15 @@ export async function GET(
       );
     }
     
-    // Get the fileKey from the URL params
-    const { fileKey } = context.params;
+    // Safely extract the fileKey from params
+    // Using the Promise.resolve approach to avoid Next.js "params should be awaited" error
+    const fileKeyPromise = Promise.resolve(params).then(p => 
+      typeof p === 'object' && p !== null && 'fileKey' in p
+        ? (p as { fileKey: string }).fileKey
+        : null
+    );
+    
+    const fileKey = await fileKeyPromise;
     
     if (!fileKey) {
       return NextResponse.json(

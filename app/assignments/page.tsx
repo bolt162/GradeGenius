@@ -5,6 +5,9 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { FileText, Upload, AlertCircle, CheckCircle, Award, Eye, Trash2 } from 'lucide-react';
 import Layout from '../components/Layout';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 interface Assignment {
   key: string;
@@ -267,6 +270,110 @@ export default function AssignmentsPage() {
     });
   };
 
+  // Format markdown content for grade feedback
+  const formatResult = (text: string) => {
+    // Define custom components with explicit type casting to avoid TS errors
+    const components = {
+      // Headings with proper styling
+      h1: ({children}: {children: React.ReactNode}) => (
+        <h1 className="text-2xl font-bold text-indigo-400 mt-6 mb-4">{children}</h1>
+      ),
+      h2: ({children}: {children: React.ReactNode}) => (
+        <h2 className="text-xl font-bold text-indigo-400 mt-5 mb-3">{children}</h2>
+      ),
+      h3: ({children}: {children: React.ReactNode}) => (
+        <h3 className="text-lg font-bold text-indigo-400 mt-4 mb-2">{children}</h3>
+      ),
+      h4: ({children}: {children: React.ReactNode}) => (
+        <h4 className="text-base font-bold text-indigo-400 mt-3 mb-2">{children}</h4>
+      ),
+      h5: ({children}: {children: React.ReactNode}) => (
+        <h5 className="text-sm font-bold text-indigo-400 mt-3 mb-1">{children}</h5>
+      ),
+      h6: ({children}: {children: React.ReactNode}) => (
+        <h6 className="text-xs font-bold text-indigo-400 mt-3 mb-1">{children}</h6>
+      ),
+      // Other text elements
+      p: ({children}: {children: React.ReactNode}) => (
+        <p className="mb-4 leading-relaxed">{children}</p>
+      ),
+      ul: ({children}: {children: React.ReactNode}) => (
+        <ul className="list-disc pl-6 mb-4 space-y-1">{children}</ul>
+      ),
+      ol: ({children}: {children: React.ReactNode}) => (
+        <ol className="list-decimal pl-6 mb-4 space-y-1">{children}</ol>
+      ),
+      li: ({children}: {children: React.ReactNode}) => (
+        <li className="mb-1">{children}</li>
+      ),
+      blockquote: ({children}: {children: React.ReactNode}) => (
+        <blockquote className="border-l-4 border-indigo-500 pl-4 italic my-4 text-gray-300">{children}</blockquote>
+      ),
+      // Table formatting
+      table: ({children}: {children: React.ReactNode}) => (
+        <div className="overflow-x-auto my-6">
+          <table className="min-w-full border border-gray-700 rounded-md">{children}</table>
+        </div>
+      ),
+      thead: ({children}: {children: React.ReactNode}) => (
+        <thead className="bg-gray-700">{children}</thead>
+      ),
+      tbody: ({children}: {children: React.ReactNode}) => (
+        <tbody className="divide-y divide-gray-700">{children}</tbody>
+      ),
+      tr: ({children}: {children: React.ReactNode}) => (
+        <tr className="hover:bg-gray-700/50 transition-colors">{children}</tr>
+      ),
+      th: ({children}: {children: React.ReactNode}) => (
+        <th className="px-4 py-3 text-left text-xs font-medium text-indigo-300 uppercase tracking-wider">{children}</th>
+      ),
+      td: ({children}: {children: React.ReactNode}) => (
+        <td className="px-4 py-3 text-sm border-t border-gray-700">{children}</td>
+      ),
+      // Formatting for emphasis
+      strong: ({children}: {children: React.ReactNode}) => (
+        <strong className="font-bold text-white">{children}</strong>
+      ),
+      em: ({children}: {children: React.ReactNode}) => (
+        <em className="italic text-gray-300">{children}</em>
+      ),
+      a: ({href, children}: {href?: string, children: React.ReactNode}) => (
+        <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>
+      ),
+      // Custom code handling with type casting
+      code: ({className, children}: {className?: string, children: React.ReactNode}) => {
+        // Check if this is a code block with a language (not an inline code)
+        const match = /language-(\w+)/.exec(className || '');
+        const content = String(children).replace(/\n$/, '');
+        
+        if (match && typeof children === 'string') {
+          // Code block with language
+          return (
+            // @ts-ignore - Type issues with SyntaxHighlighter
+            <SyntaxHighlighter style={vscDarkPlus} language={match[1]}>
+              {content}
+            </SyntaxHighlighter>
+          );
+        }
+        
+        // Inline code
+        return (
+          <code className="bg-gray-700 px-1 rounded text-white font-mono text-sm">{children}</code>
+        );
+      }
+    };
+
+    // Use ReactMarkdown with our custom components
+    return (
+      <div className="prose prose-invert max-w-none">
+        {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
+        <ReactMarkdown components={components}>
+          {text}
+        </ReactMarkdown>
+      </div>
+    );
+  };
+
   // Count ungraded assignments to check if uploads should be disabled
   const ungradedCount = assignments.filter(a => !a.graded).length;
   const isUploadDisabled = ungradedCount >= 3;
@@ -461,11 +568,7 @@ export default function AssignmentsPage() {
                   <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
                 </div>
               ) : (
-                <div className="prose prose-invert max-w-none">
-                  {gradeFeedback?.split('\n').map((line, i) => (
-                    line ? <p key={i} className="mb-4">{line}</p> : <br key={i} />
-                  ))}
-                </div>
+                gradeFeedback && formatResult(gradeFeedback)
               )}
             </div>
             

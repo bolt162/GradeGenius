@@ -49,8 +49,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    // Extract file owner from the key (usually the first part before the first slash)
-    const fileOwner = fileKey.split('/')[0];
+    // Extract file owner from the key (the first part of the path)
+    const pathParts = fileKey.split('/');
+    const fileOwner = pathParts[0];
+    
+    // Check if this is in the new assignments folder structure
+    const isInAssignmentsFolder = pathParts.length > 2 && pathParts[1] === 'assignments';
     
     // Check if the user owns this file (using either username or userId)
     if (fileOwner !== username && fileOwner !== userId) {
@@ -62,6 +66,23 @@ export async function DELETE(request: NextRequest) {
     
     // Delete the file from S3
     await deleteFile(fileKey);
+    
+    // If this was a file in the assignments folder, we might also want to delete any associated grade file
+    if (isInAssignmentsFolder) {
+      try {
+        const fileName = pathParts[pathParts.length - 1];
+        const gradeKey = `${fileOwner}/grades/${fileName}-grade.json`;
+        
+        // Try to delete the grade file if it exists (we don't care if this fails)
+        await deleteFile(gradeKey).catch(err => {
+          // Just log the error but don't fail the request
+          console.log(`Note: Could not delete associated grade file: ${err.message}`);
+        });
+      } catch (gradeDeleteError) {
+        // Log but don't fail the main request
+        console.log('Note: Error when trying to delete grade file:', gradeDeleteError);
+      }
+    }
     
     // Success response
     return NextResponse.json({ 

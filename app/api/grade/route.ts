@@ -3,14 +3,18 @@ import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { detectSubmissionType } from '../../lib/contentAnalyzer';
 import { classifySubmissionType } from '../../lib/classificationAgent';
-import { codeGradingPrompt, essayGradingPrompt, defaultGradingPrompt } from '../../lib/prompts';
-import { storeGradeResult } from '../../lib/s3';
+import { codeGradingPrompt, essayGradingPrompt, defaultGradingPrompt, singleQuestionGradingPrompt, contextOnlyGradingPrompt, contextOnlyStandardGradingPrompt } from '../../lib/prompts';
+import { storeGradeResult, getFileContent, getDocumentContent, getRubric } from '../../lib/s3';
 import { getUserTokens, spendUserTokens, calculateTokens } from '../../lib/dynamo';
 import { cookies } from 'next/headers';
+import { RAGService } from '../../lib/rag/ragService';
+
+// Initialize RAG service
+const ragService = new RAGService();
 
 export async function POST(request: NextRequest) {
+  console.log('Grade request received');
   const requestStartTime = Date.now();
-  
   try {
     // Check if this is a demo request
     const isDemo = request.nextUrl.searchParams.has('demo') || request.nextUrl.pathname.includes('/demo');
@@ -56,7 +60,7 @@ export async function POST(request: NextRequest) {
     
     // Parse the request body
     const body = await request.json();
-    const { studentWork, rubric, submissionType, fileName, fileKey } = body;
+    const { studentWork, rubric, submissionType, fileName, fileKey, selectedRubricKey } = body;
 
     if (!studentWork) {
       return NextResponse.json(
@@ -101,7 +105,7 @@ export async function POST(request: NextRequest) {
     try {
       model = new ChatOpenAI({
         temperature: 0.1,
-        modelName: "gpt-3.5-turbo",
+        modelName: "gpt-4o",
       });
     } catch (error: any) {
       return NextResponse.json(
@@ -110,104 +114,357 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TEMPORARY DEBUGGING - Skip AI classification and just use basic detection
-    // This helps isolate if the OpenAI API is the problem
+    // Detect submission type
     let detectedType: 'code' | 'essay';
     
     if (submissionType === 'code' || submissionType === 'essay') {
-      // Use the explicitly provided type
+      console.log('[Grade API] Submission type detected:', submissionType);
       detectedType = submissionType;
     } else {
-      // Only use basic detection for now to bypass potential OpenAI issues
       detectedType = detectSubmissionType(studentWork);
+      console.log('[Grade API] Submission detected after evaluation:', detectedType);
     }
 
-    // Select the appropriate prompt template based on submission type
-    let templateString;
-    switch (detectedType) {
-      case 'code':
-        templateString = codeGradingPrompt;
-        break;
-      case 'essay':
-        templateString = essayGradingPrompt;
-        break;
-      default:
-        templateString = defaultGradingPrompt;
-    }
+    // Process submission with RAG if we have a fileKey
+    let actualContent = studentWork; // Store the actual content
 
-    const prompt = PromptTemplate.fromTemplate(templateString);
-    
-    // Generate the response
-    const formattedPrompt = await prompt.format({
-      studentWork,
-      rubric: rubric || 'Grade on clarity, organization, and accuracy.',
-    });
-
-    const openaiCallStart = Date.now();
-    try {
-      const response = await model.invoke(formattedPrompt);
-      const duration = Date.now() - openaiCallStart;
-      
-      const gradeResult = response.content;
-      
-      // Store the grade in S3 if we have a fileKey
-      let gradeStorageResult = null;
-      if (fileKey) {
-        try {
-          // Use the username we extracted from the session cookie
-          const user_name = username || userId;
-          
-          gradeStorageResult = await storeGradeResult(
-            fileKey,
-            userId,
-            gradeResult as string,
-            rubric || 'Grade on clarity, organization, and accuracy.',
-            user_name
-          );
-        } catch (storageError: any) {
-          // Continue execution even if storage fails
-          console.error('Failed to store grade:', storageError);
-        }
-      }
-      
-      // Deduct tokens from user's account
+    if (fileKey) {
       try {
-        // Skip token deduction for demo users
-        if (!isDemo) {
-          await spendUserTokens(userId, tokensNeeded);
+        // Get the actual content from S3 if we have a fileKey
+        try {
+          console.log('[Grade API] Fetching content from S3 for:', fileKey);
+          
+          // Check if the file is a document type (docx or doc)
+          const isDocument = fileKey.toLowerCase().endsWith('.docx') || fileKey.toLowerCase().endsWith('.doc');
+          
+          // Use the appropriate method to get content based on file type
+          let content;
+          if (isDocument) {
+            console.log('[Grade API] Detected document file type, using document content extractor');
+            content = await getDocumentContent(fileKey);
+            // If this is a document, it's likely an essay, so override the detection
+            if (detectedType === 'code') {
+              console.log('[Grade API] Overriding detected type from code to essay for document file');
+              detectedType = 'essay';
+            }
+          } else {
+            content = await getFileContent(fileKey);
+          }
+          
+          if (content) {
+            actualContent = content;
+            console.log('[Grade API] Retrieved content from S3:', {
+              contentLength: actualContent.length,
+              sampleContent: actualContent.substring(0, 100),
+              isUrl: actualContent.startsWith('http'),
+              firstLine: actualContent.split('\n')[0]
+            });
+          } else {
+            console.log('[Grade API] No content received from S3, falling back to studentWork');
+          }
+        } catch (contentError) {
+          console.error('[Grade API] Error fetching content from S3:', contentError);
+          // Continue with the original content if we can't get it from S3
         }
-      } catch (tokenError: any) {
-        // Continue execution even if token deduction fails
-        console.error('Failed to deduct tokens:', tokenError);
+
+        // Process the submission for future reference
+        console.log('[Grade API] Content being sent to RAGService:', {
+          contentLength: actualContent.length,
+          contentType: typeof actualContent,
+          isUrl: actualContent.startsWith('http'),
+          firstLine: actualContent.split('\n')[0]
+        });
+        
+        await ragService.processSubmission({
+          content: actualContent, // Use the actual content
+          type: detectedType,
+          userId,
+          fileKey
+        });
+      } catch (ragError: any) {
+        console.error('RAG processing failed:', ragError);
+        // Continue without RAG context if it fails
       }
-      
-      // Return the result
-      const totalTime = Date.now() - requestStartTime;
-      return NextResponse.json({ 
-        result: gradeResult,
-        detectedType,
-        processingTime: totalTime,
-        gradeStored: !!gradeStorageResult,
-        tokensUsed: tokensNeeded
-      });
-    } catch (error: any) {
-      let errorDetails = `OpenAI API call failed: ${error?.message || 'Unknown error'}`;
-      
-      // Add detailed error info if available
-      if (error.response) {
-        const responseDetails = `Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data || {}).substring(0, 200)}`;
-        errorDetails += ` - ${responseDetails}`;
-      }
-      
-      return NextResponse.json(
-        { error: errorDetails },
-        { status: 502 }
-      );
     }
+
+    // Get rubric details if a saved rubric was selected
+    let rubricDetails = null;
+    let rubricQuestions: string[] = [];
+    let courseInfo = { course: "", specialization: "", classLevel: "" };
+    
+    // If we have a selected rubric key, fetch the rubric details
+    if (selectedRubricKey) {
+      try {
+        const rubricData = await getRubric(selectedRubricKey, userId, username);
+        if (rubricData) {
+          rubricDetails = rubricData;
+          rubricQuestions = rubricData.questions || [];
+          
+          // Extract course information
+          courseInfo = {
+            course: rubricData.course || "",
+            specialization: rubricData.specialization || "",
+            classLevel: rubricData.classLevel || ""
+          };
+          
+          console.log('[Grade API] Retrieved rubric details:', {
+            name: rubricData.name,
+            numQuestions: rubricQuestions.length,
+            courseInfo,
+            questions: rubricQuestions,
+            completeRubricData: JSON.stringify(rubricData)
+          });
+        }
+      } catch (error) {
+        console.error('[Grade API] Error fetching rubric details:', error);
+      }
+    } else if (rubric) {
+      // If using a manual rubric, split by newlines to get questions
+      rubricQuestions = rubric.split('\n').filter((q: string) => q.trim().length > 0);
+      console.log('[Grade API] Using manual rubric:', {
+        rubricText: rubric,
+        parsedQuestions: rubricQuestions
+      });
+    }
+
+    let responseText = '';
+    
+    // If not a demo request, always use the RAG context approach
+    if (!isDemo) {
+      if (rubricQuestions.length > 0) {
+        console.log('[Grade API] Processing individual questions from rubric');
+        
+        let questionResponses = [];
+        
+        // Process each question with its own context
+        for (let i = 0; i < rubricQuestions.length; i++) {
+          const question = rubricQuestions[i];
+          console.log(`[Grade API] Processing question ${i+1}: ${question.substring(0, 50)}...`);
+          
+          // Retrieve relevant context for this specific question
+          let questionContext = null;
+          try {
+            questionContext = await ragService.retrieveContext(
+              question,
+              {
+                contentType: detectedType,
+                userId,
+                fileKey: fileKey || undefined
+              }
+            );
+            
+            console.log(`[Grade API] Retrieved context for question ${i+1}:`, questionContext ? questionContext.chunks.length : 'none');
+          } catch (contextError) {
+            console.error(`[Grade API] Error retrieving context for question ${i+1}:`, contextError);
+          }
+          
+          // Format the prompt with the question and context
+          const promptTemplate = PromptTemplate.fromTemplate(singleQuestionGradingPrompt);
+          
+          const formattedPrompt = await promptTemplate.format({
+            course: courseInfo.course || "General",
+            specialization: courseInfo.specialization || "General",
+            classLevel: courseInfo.classLevel || "General",
+            question: question,
+            studentWork: actualContent,
+            context: questionContext ? JSON.stringify(questionContext.chunks) : "No additional context available."
+          });
+          
+          console.log(`[Grade API] Sending prompt for question ${i+1} to AI model`);
+          
+          // Get response from AI model
+          const response = await model.invoke(formattedPrompt);
+          questionResponses.push(String(response.content));
+        }
+        
+        // Combine all responses
+        responseText = questionResponses.join("\n\n---\n\n");
+      } else {
+        console.log('[Grade API] No rubric questions found, using default prompt with context');
+        
+        // Default to single question approach for backward compatibility
+        let defaultContext = null;
+        try {
+          defaultContext = await ragService.retrieveContext(
+            "Grade this submission",
+            {
+              contentType: detectedType,
+              userId,
+              fileKey: fileKey || undefined
+            }
+          );
+        } catch (contextError) {
+          console.error('[Grade API] Error retrieving default context:', contextError);
+        }
+        
+        // Use default grading prompt with context
+        const promptTemplate = PromptTemplate.fromTemplate(defaultGradingPrompt);
+        
+        const formattedPrompt = await promptTemplate.format({
+          rubric: rubric || "Grade on clarity, organization, and accuracy.",
+          studentWork: actualContent,
+          context: defaultContext || "No additional context available."
+        });
+        
+        console.log('[Grade API] Sending default prompt with context to AI model');
+        
+        // Get response from AI model
+        const response = await model.invoke(formattedPrompt);
+        responseText = String(response.content);
+      }
+    } 
+    // For demo requests, we can still use all three approaches
+    else {
+      const demoMode = request.nextUrl.searchParams.get('mode');
+      
+      if (demoMode === 'contextOnly') {
+        // Demo mode: Context-only grading (for testing)
+        console.log('[Grade API] Demo mode: Context-only grading');
+        
+        let questionResponses = [];
+        
+        // For demo, we'll use a simplified "rubric" with just a couple of questions
+        const demoQuestions = [
+          "Evaluate the overall structure and organization of this work.",
+          "Assess the accuracy and clarity of the ideas presented."
+        ];
+        
+        for (let i = 0; i < demoQuestions.length; i++) {
+          const question = demoQuestions[i];
+          
+          // Skip student work, only provide context
+          const promptTemplate = PromptTemplate.fromTemplate(contextOnlyGradingPrompt);
+          
+          // Get context for this question
+          let questionContext = null;
+          try {
+            questionContext = await ragService.retrieveContext(
+              question,
+              {
+                contentType: detectedType,
+                userId,
+                fileKey: fileKey || undefined
+              }
+            );
+          } catch (contextError) {
+            console.error(`[Grade API] Error retrieving context for demo question ${i+1}:`, contextError);
+          }
+          
+          const formattedPrompt = await promptTemplate.format({
+            course: "Demo Course",
+            specialization: "AI Testing",
+            classLevel: "Advanced",
+            question: question,
+            context: questionContext || "No additional context available."
+          });
+          
+          // Get response from AI model
+          const response = await model.invoke(formattedPrompt);
+          questionResponses.push(String(response.content));
+        }
+        
+        // Combine all responses
+        responseText = questionResponses.join("\n\n---\n\n");
+      } else if (demoMode === 'standardContext') {
+        // Demo mode: Standard grading with context only
+        console.log('[Grade API] Demo mode: Standard grading with context only');
+        
+        let defaultContext = null;
+        try {
+          defaultContext = await ragService.retrieveContext(
+            "Grade this submission",
+            {
+              contentType: detectedType,
+              userId,
+              fileKey: fileKey || undefined
+            }
+          );
+        } catch (contextError) {
+          console.error('[Grade API] Error retrieving context for standard demo:', contextError);
+        }
+        
+        // Use contextOnly standard grading prompt
+        const promptTemplate = PromptTemplate.fromTemplate(contextOnlyStandardGradingPrompt);
+        
+        const formattedPrompt = await promptTemplate.format({
+          rubric: rubric || "Grade on clarity, organization, and accuracy.",
+          context: defaultContext || "No additional context available."
+        });
+        
+        // Get response from AI model
+        const response = await model.invoke(formattedPrompt);
+        responseText = String(response.content);
+      } else {
+        // Regular demo mode
+        // Choose prompt based on detected type
+        console.log('[Grade API] Demo mode: Regular grading');
+        let promptTemplate;
+        
+        if (detectedType === 'code') {
+          promptTemplate = PromptTemplate.fromTemplate(codeGradingPrompt);
+        } else if (detectedType === 'essay') {
+          promptTemplate = PromptTemplate.fromTemplate(essayGradingPrompt);
+        } else {
+          promptTemplate = PromptTemplate.fromTemplate(defaultGradingPrompt);
+        }
+      
+        const formattedPrompt = await promptTemplate.format({
+          rubric: rubric || "Grade on clarity, organization, and accuracy.",
+          studentWork: actualContent
+        });
+      
+        // Get response from AI model
+        const response = await model.invoke(formattedPrompt);
+        responseText = String(response.content);
+      }
+    }
+    
+    // Store the result in S3 if we have a file key
+    let resultKey = null;
+    if (fileKey) {
+      try {
+        const user_name = username || userId;
+        resultKey = await storeGradeResult(
+          fileKey,
+          userId,
+          responseText,
+          rubric || 'Grade on clarity, organization, and accuracy.',
+          user_name
+        );
+        console.log('[Grade API] Stored grading result:', resultKey);
+      } catch (error) {
+        console.error('[Grade API] Error storing result:', error);
+        // Continue without storing if it fails
+      }
+    }
+    
+    // Deduct tokens for the request (skip for demo)
+    if (!isDemo) {
+      try {
+        await spendUserTokens(userId, tokensNeeded);
+        console.log('[Grade API] Tokens spent:', tokensNeeded);
+      } catch (error) {
+        console.error('[Grade API] Error spending tokens:', error);
+        // Continue without deducting if it fails
+      }
+    }
+    
+    // Calculate timing
+    const requestEndTime = Date.now();
+    const requestDuration = requestEndTime - requestStartTime;
+    console.log(`[Grade API] Request completed in ${requestDuration}ms`);
+    
+    return NextResponse.json({
+      success: true,
+      result: responseText,
+      resultKey,
+      tokensUsed: tokensNeeded
+    });
   } catch (error: any) {
+    console.error('[Grade API] Unhandled error:', error);
     return NextResponse.json(
-      { error: `Unhandled error: ${error?.message || 'Unknown error'}` },
+      { error: `Grading failed: ${error?.message || 'Unknown error'}` },
       { status: 500 }
     );
   }
-} 
+}

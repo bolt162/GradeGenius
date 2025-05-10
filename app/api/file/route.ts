@@ -61,6 +61,19 @@ export async function GET(request: NextRequest) {
       else if (fileKey.endsWith('.pdf')) contentType = 'application/pdf';
       else if (fileKey.endsWith('.jpg') || fileKey.endsWith('.jpeg')) contentType = 'image/jpeg';
       else if (fileKey.endsWith('.png')) contentType = 'image/png';
+      else if (fileKey.endsWith('.docx')) contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      else if (fileKey.endsWith('.doc')) contentType = 'application/msword';
+      else if (fileKey.endsWith('.js')) contentType = 'application/javascript';
+      else if (fileKey.endsWith('.ts')) contentType = 'application/typescript';
+      else if (fileKey.endsWith('.html')) contentType = 'text/html';
+      else if (fileKey.endsWith('.css')) contentType = 'text/css';
+      else if (fileKey.endsWith('.json')) contentType = 'application/json';
+      else if (fileKey.endsWith('.cpp')) contentType = 'text/x-c++src';
+      else if (fileKey.endsWith('.c')) contentType = 'text/x-csrc';
+      else if (fileKey.endsWith('.h')) contentType = 'text/x-chdr';
+      
+      // Get the filename (last part of the path)
+      const fileName = fileKey.split('/').pop() || '';
       
       // Return file details
       return NextResponse.json({
@@ -68,7 +81,7 @@ export async function GET(request: NextRequest) {
         file: {
           key: fileKey,
           url: fileUrl,
-          name: fileKey.split('/').pop() || '',
+          name: fileName,
           contentType
         }
       });

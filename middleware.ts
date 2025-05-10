@@ -77,7 +77,8 @@ export async function middleware(request: NextRequest) {
     '/tokens',
     '/grades',
     '/grade',
-    '/assignments'
+    '/assignments',
+    '/rubrics'
   ];
 
   // Check if the current path is a protected route or starts with one
@@ -104,27 +105,20 @@ export async function middleware(request: NextRequest) {
   let lastActivity = lastActivityCookie ? parseInt(lastActivityCookie, 10) : 0;
   
   console.log(`Found cookies: __session=${!!sessionCookie}, __clerk_db_jwt=${!!clerkDbJwtCookie}, __clerk=${!!clerkCookie}`);
+  
+  // If no cookies, redirect to login immediately
+  if (!sessionCookie && !clerkDbJwtCookie) {
+    console.log('No cookies found, redirecting to login');
+    return redirectToLogin(request);
+  }
+  
   console.log(`Last activity: ${lastActivity ? new Date(lastActivity).toISOString() : 'never'}`);
   
   // Check if the user has been inactive for too long
   const now = Date.now();
   if (lastActivity && (now - lastActivity > INACTIVITY_TIMEOUT)) {
     console.log(`User inactive for ${(now - lastActivity) / 1000 / 60} minutes, logging out`);
-    
-    // Create login URL with the signout parameter
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('forceSignOut', 'true');
-    
-    // User has been inactive too long, clear cookies and redirect to login
-    const response = NextResponse.redirect(loginUrl);
-    
-    // Clear all cookies
-    response.cookies.delete('__session');
-    response.cookies.delete('__clerk_db_jwt');
-    response.cookies.delete('__clerk');
-    response.cookies.delete('last_activity');
-    
-    return response;
+    return redirectToLogin(request);
   }
   
   // Validate the JWT tokens if they exist
@@ -143,21 +137,7 @@ export async function middleware(request: NextRequest) {
   // If no valid session found, redirect to login
   if (!hasValidSession) {
     console.log('No valid session found, redirecting to login');
-    
-    // Create login URL with the signout parameter
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('forceSignOut', 'true');
-    
-    // Clear any potentially invalid cookies
-    const response = NextResponse.redirect(loginUrl);
-    
-    // Clear all Clerk cookies
-    response.cookies.delete('__session');
-    response.cookies.delete('__clerk_db_jwt');
-    response.cookies.delete('__clerk');
-    response.cookies.delete('last_activity');
-    
-    return response;
+    return redirectToLogin(request);
   }
 
   console.log('Valid session found, allowing access');
@@ -169,6 +149,24 @@ export async function middleware(request: NextRequest) {
     httpOnly: true,
     sameSite: 'lax'
   });
+  
+  return response;
+}
+
+// Helper function to redirect to login page
+function redirectToLogin(request: NextRequest) {
+  // Create login URL with the signout parameter
+  const loginUrl = new URL('/login', request.url);
+  loginUrl.searchParams.set('forceSignOut', 'true');
+  
+  // Clear any potentially invalid cookies
+  const response = NextResponse.redirect(loginUrl);
+  
+  // Clear all Clerk cookies
+  response.cookies.delete('__session');
+  response.cookies.delete('__clerk_db_jwt');
+  response.cookies.delete('__clerk');
+  response.cookies.delete('last_activity');
   
   return response;
 }
@@ -193,6 +191,8 @@ export const config = {
     '/grade/:path*',
     '/assignments',
     '/assignments/:path*',
+    '/rubrics',
+    '/rubrics/:path*',
     '/login',
     '/signup',
     '/sign-in',
