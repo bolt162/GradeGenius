@@ -1,0 +1,238 @@
+.pricingSection {
+    padding: 50px 0;
+    background-color: #ffffff;
+    scroll-margin-top: 5rem;
+}
+  
+.container {
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.preTitle {
+  font-family: var(--font-oswald);
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  text-transform: uppercase;
+  background-color: #f5f2ee;
+  padding: 8px 20px;
+  border-radius: 50px;
+  display: inline-block;
+  margin: 0 auto 20px;
+  letter-spacing: 1px;
+}
+
+.title {
+font-family: var(--font-oswald);
+font-size: 60px;
+line-height: 1.1;
+font-weight: 700;
+text-align: left;
+margin-bottom: 3rem;
+color: #000;
+}
+
+.pricingGrid {
+display: grid;
+grid-template-columns: repeat(1, minmax(0, 1fr));
+gap: 2rem;
+}
+
+.pricingCard {
+padding: 2.5rem;
+border-radius: 16px;
+box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+display: flex;
+flex-direction: column;
+transition: transform 0.3s ease, box-shadow 0.3s ease;
+position: relative;
+overflow: hidden;
+}
+
+.freemiumCard {
+background-color: #f1f1f1;
+}
+
+.standardCard {
+background-color: #111;
+color: white;
+}
+
+.enterpriseCard {
+background-color: #f8f8f8;
+}
+
+.iconContainer {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 2.5rem;
+height: 2.5rem;
+border-radius: 0.5rem;
+margin-bottom: 1rem;
+}
+
+.freeIcon {
+background-color: #e0e7ff;
+color: #4f46e5;
+}
+
+.standardIcon {
+background-color: #f3e8ff;
+color: #7e22ce;
+}
+
+.enterpriseIcon {
+background-color: #fce7f3;
+color: #be185d;
+}
+
+.cardTitle {
+font-family: var(--font-oswald);
+font-size: 1.5rem;
+line-height: 2rem;
+font-weight: 600;
+margin-bottom: 1rem;
+color: #111827;
+}
+
+.standardCard .cardTitle,
+.standardCard .featureText,
+.standardCard .price,
+.standardCard .pricePeriod {
+color: white;
+}
+
+.priceContainer {
+font-family: var(--font-oswald);
+font-size: 2.25rem;
+line-height: 2.5rem;
+font-weight: 700;
+margin-bottom: 1.5rem;
+display: flex;
+align-items: flex-end;
+}
+
+.price {
+color: #000;
+}
+
+.pricePeriod {
+font-family: var(--font-oswald);
+font-size: 1.125rem;
+line-height: 1.75rem;
+color: #6b7280;
+margin-left: 0.25rem;
+}
+
+.featuresList {
+display: flex;
+flex-direction: column;
+gap: 0.875rem;
+margin-bottom: 2rem;
+flex-grow: 1;
+}
+
+.featureItem {
+display: flex;
+align-items: center;
+font-family: var(--font-oswald);
+}
+
+.featureCheckmark {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+margin-right: 0.75rem;
+width: 1.25rem;
+height: 1.25rem;
+border-radius: 50%;
+background-color: #f3e8ff;
+color: #cda4fa;
+font-size: 0.75rem;
+}
+
+.standardCard .featureCheckmark {
+background-color: #ffedf0;
+color: black;
+}
+
+.featureText {
+font-family: var(--font-oswald);
+color: #4b5563;
+}
+
+.darkButton {
+font-family: var(--font-oswald);
+width: 100%;
+background-color: #000;
+color: white;
+padding: 0.75rem 0;
+border-radius: 0.5rem;
+text-align: center;
+transition: all 0.3s ease;
+font-weight: 500;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+cursor: pointer;
+border: 2px solid transparent;
+}
+
+.darkButton:hover {
+background-color: #f1f1f1;
+color: black;
+border: 2px solid black;
+}
+
+.lightButton {
+    font-family: var(--font-oswald);
+    width: 100%;
+    background-color: white;
+    color: black;
+    padding: 0.75rem 0;
+    border-radius: 0.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.lightButton:hover {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.lightButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Media queries */
+@media (min-width: 768px) {
+    .pricingGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .title {
+      font-size: 32px;
+      text-align: center;
+    }
+    .preTitle {
+        font-size: 14px;
+    }
+}

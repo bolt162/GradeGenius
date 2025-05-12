@@ -1,0 +1,225 @@
+.highlightsContainer {
+    padding: 5rem 0;
+    background-color: #fff;
+    overflow: hidden;
+    position: relative;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  .highlightsContainer::before {
+    content: none;
+  }
+  
+  .twoColumnLayout {
+    display: flex;
+    flex-direction: column;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    gap: 3rem;
+  }
+  
+  .leftColumn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 1.5rem;
+    font-family: 'Oswald', sans-serif;
+    background-color: #f5f3f0;
+    border-radius: 30px;
+    padding: 0.75rem 1.5rem;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .title {
+    font-size: 2.75rem;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 1.5rem;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  .description {
+    font-size: 1.15rem;
+    color: #6b7280;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    max-width: 500px;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  .buttonGroup {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .primaryButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: white;
+    background-color: #000;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  .primaryButton:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+  
+  .secondaryButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #000;
+    background-color: transparent;
+    border: 1px solid #000;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  .secondaryButton:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+  }
+  
+  .rightColumn {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .featureBox {
+    background-color: #fff;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  .featureBox:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  
+  .featureBox::after {
+    content: none;
+  }
+  
+  .featureContent {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .featureIcon {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .featureBox:hover .featureIcon {
+    transform: scale(1.1);
+  }
+  
+  .featureTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-block;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  .featureTitle::after {
+    content: none;
+  }
+  
+  .featureText {
+    color: #6b7280;
+    line-height: 1.7;
+    font-size: 1.05rem;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  /* Remove animations */
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .featureBox {
+    animation: none;
+  }
+  
+  .featureBox:nth-child(1) { animation-delay: 0; }
+  .featureBox:nth-child(2) { animation-delay: 0; }
+  .featureBox:nth-child(3) { animation-delay: 0; }
+  
+  /* Media Queries */
+  @media (min-width: 768px) {
+    .twoColumnLayout {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    
+    .leftColumn {
+      flex: 1;
+      padding-right: 2rem;
+    }
+    
+    .rightColumn {
+      flex: 1;
+    }
+    
+    .title {
+      font-size: 3rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .twoColumnLayout {
+      gap: 4rem;
+    }
+    
+    .title {
+      font-size: 3.5rem;
+    }
+    
+    .description {
+      font-size: 1.25rem;
+    }
+  }

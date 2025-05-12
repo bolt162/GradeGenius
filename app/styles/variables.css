@@ -1,0 +1,22 @@
+:root {
+  /* Brand Colors */
+  --color-primary: #01abee;
+  --color-primary-light: rgba(1, 171, 238, 0.1);
+  --color-primary-dark: #0098d4;
+  
+  --color-secondary: #2b4762;
+  --color-secondary-light: rgba(43, 71, 98, 0.1);
+  --color-secondary-dark: #1e3245;
+
+  /* Background Colors */
+  --bg-hero: var(--color-primary);
+  
+  /* Text Colors */
+  --text-primary: var(--color-primary);
+  --text-secondary: var(--color-secondary);
+  --text-light: #ffffff;
+  
+  /* Other Colors */
+  --border-color: rgba(0, 0, 0, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+} 

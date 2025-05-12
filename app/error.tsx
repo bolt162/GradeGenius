@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import Navigation from './components/Navigation';
+import Navigation from './components/Navigation/Navigation';
 import { RefreshCw, Home } from 'lucide-react';
 
 export default function Error({
@@ -44,7 +44,7 @@ export default function Error({
               <h2 className="text-2xl font-semibold text-neutral-800 mb-4">Oops! An Error Occurred</h2>
               
               <p className="text-neutral-600 mb-8">
-                We're sorry for the inconvenience. Our team has been notified of this issue.
+                We&apos;re sorry for the inconvenience. Our team has been notified of this issue.
                 You can try again or return to the homepage.
               </p>
               

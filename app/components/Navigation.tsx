@@ -28,7 +28,7 @@ export default function Navigation() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   const isLoginPage = pathname === '/login' || pathname === '/signup' || pathname === '/verify';
-  const isDemoPage = pathname === '/demo';
+  // const isDemoPage = pathname === '/demo';
   
   // For pages other than the homepage (/)
   const isNotHomePage = pathname !== '/';

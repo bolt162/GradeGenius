@@ -1,11 +1,12 @@
 'use client';
 
-import Navigation from '../components/Navigation';
+import Navigation from '../components/Navigation/Navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 import { useSignIn, useClerk } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Footer from '../components/Footer';
 
 // Component that uses searchParams, wrapped in Suspense
 function LoginForm() {
@@ -32,7 +33,7 @@ function LoginForm() {
           const url = new URL(window.location.href);
           url.searchParams.delete('forceSignOut');
           window.history.replaceState({}, '', url);
-        } catch (err) {
+        } catch {
           // Quietly handle signout errors
         } finally {
           setIsSigningOut(false);
@@ -65,8 +66,13 @@ function LoginForm() {
         await setActive({ session: result.createdSessionId });
         router.push('/dashboard'); // Redirect to dashboard page after successful login
       }
-    } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      const errorMsg = err && typeof err === 'object' && 'errors' in err && 
+        Array.isArray((err as any).errors) && (err as any).errors[0]?.message ? 
+        (err as any).errors[0].message : 
+        'Something went wrong. Please try again.';
+      
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -211,43 +217,7 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-neutral-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">GradeGenius</h3>
-              <p className="text-indigo-200">Making grading smarter and faster with AI technology.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2">
-                <li><a href="/#features" className="text-indigo-200 hover:text-white">Features</a></li>
-                <li><a href="/#pricing" className="text-indigo-200 hover:text-white">Pricing</a></li>
-                <li><a href="/demo" className="text-indigo-200 hover:text-white">Demo</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2">
-                <li><a href="/#about" className="text-indigo-200 hover:text-white">About</a></li>
-                <li><a href="/#contact" className="text-indigo-200 hover:text-white">Contact</a></li>
-                <li><a href="/#careers" className="text-indigo-200 hover:text-white">Careers</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2">
-                <li><a href="#privacy" className="text-indigo-200 hover:text-white">Privacy Policy</a></li>
-                <li><a href="#terms" className="text-indigo-200 hover:text-white">Terms of Service</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-neutral-800 mt-12 pt-8 text-center text-indigo-200">
-            <p>© 2024 GradeGenius. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 } 

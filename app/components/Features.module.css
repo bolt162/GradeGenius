@@ -1,0 +1,171 @@
+/* Core layout classes */
+.verticalLayout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Bubble title section */
+.bubbleTitleSection {
+  text-align: center;
+  width: 100%;
+  max-width: 1400px;
+  padding: 0 20px;
+  margin-bottom: -24px;
+}
+
+.bubbleTitleSection .title {
+  font-family: var(--font-oswald);
+  font-size: 60px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #000;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.bubbleTitleSection .subtitle {
+  font-family: var(--font-oswald);
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  text-transform: uppercase;
+  background-color: #f5f2ee;
+  padding: 8px 20px;
+  border-radius: 50px;
+  display: inline-block;
+  margin: 0 auto 20px;
+  letter-spacing: 1px;
+}
+
+/* Title & subtitle (general) */
+.title {
+  font-family: var(--font-oswald);
+  font-size: 60px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 24px 0;
+  color: #222;
+  text-align: center;
+  position: relative;
+  z-index: 20;
+}
+
+.subtitle {
+  font-family: var(--font-oswald);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+/* Physics container and canvas */
+.physicsContainer {
+  position: relative;
+  width: 100%;
+  height: 550px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0;
+  overflow: scroll;
+}
+
+.physicsCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  background: #fff;
+}
+
+/* Bubbles layer */
+.bubblesLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Individual bubble */
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+  overflow: visible;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+}
+
+.bubbleContent {
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-oswald);
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+  line-height: 1.2;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0;
+  hyphens: auto;
+}
+
+/* Media queries */
+@media (max-width: 900px) {
+  .title {
+    font-size: 36px;
+  }
+  
+  .bubbleTitleSection .title {
+    font-size: 42px;
+  }
+  
+  .subtitle {
+    font-size: 28px;
+  }
+  
+  .physicsContainer {
+    height: 500px;
+  }
+  
+  .bubbleContent {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .title {
+    font-size: 32px;
+  }
+  
+  .bubbleTitleSection .title {
+    font-size: 32px;
+  }
+  
+  .subtitle {
+    font-size: 24px;
+  }
+  
+  .physicsContainer {
+    height: 400px;
+  }
+  
+  .bubbleContent {
+    font-size: 14px;
+  }
+}

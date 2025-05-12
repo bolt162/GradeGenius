@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import Navigation from './components/Navigation';
+import Navigation from './components/Navigation/Navigation';
 import { ArrowLeft, Home } from 'lucide-react';
 
 export default function NotFound() {
@@ -13,7 +13,7 @@ export default function NotFound() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-neutral-900 mb-4">Page Not Found</h1>
-            <p className="text-xl text-neutral-700">The page you're looking for doesn't exist or has been moved</p>
+            <p className="text-xl text-neutral-700">The page you&apos;re looking for doesn&apos;t exist or has been moved</p>
           </div>
           
           <div className="flex justify-center">
@@ -28,10 +28,10 @@ export default function NotFound() {
                 />
               </div>
               
-              <h2 className="text-2xl font-semibold text-neutral-800 mb-4">Oops! You've hit a 404</h2>
+              <h2 className="text-2xl font-semibold text-neutral-800 mb-4">Oops! You&apos;ve hit a 404</h2>
               
               <p className="text-neutral-600 mb-8">
-                We couldn't find the page you were looking for. It might have been moved,
+                We couldn&apos;t find the page you were looking for. It might have been moved,
                 deleted, or perhaps the URL was mistyped.
               </p>
               

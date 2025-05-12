@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useSignUp } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Navigation from '../components/Navigation';
+import Navigation from '../components/Navigation/Navigation';
 
 export default function VerifyPage() {
   const { signUp, isLoaded, setActive } = useSignUp();
@@ -91,7 +91,7 @@ export default function VerifyPage() {
               </div>
               <h1 className="text-3xl font-bold text-neutral-900">Verify Your Email</h1>
               <p className="text-neutral-600 mt-2">
-                We've sent a verification code to your email address.
+                We&apos;ve sent a verification code to your email address.
                 Please enter it below to complete your registration.
               </p>
             </div>
@@ -130,7 +130,7 @@ export default function VerifyPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-neutral-600">
-                Didn't receive a code?{' '}
+                Didn&apos;t receive a code?{' '}
                 <button 
                   onClick={handleResendCode} 
                   disabled={isLoading}
