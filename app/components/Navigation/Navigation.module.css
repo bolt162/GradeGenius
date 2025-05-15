@@ -279,4 +279,46 @@
   .mainNavMobileOpen .activeNavLink {
     padding: 1rem 2rem; /* More vertical space in mobile menu */
   }
+  
+  /* Show only Sign Up on mobile */
+  .loginButton {
+    display: none; /* Hide login button on mobile */
+  }
+  
+  .signupButton {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.5px;
+  }
+  
+  /* Add a subtle animation to draw attention */
+  .signupButton:hover,
+  .signupButton:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Specific adjustments for very small screens */
+@media (max-width: 400px) {
+  .authButtons {
+    position: fixed;
+    top: 60px;
+    right: 10px;
+    z-index: 40;
+  }
+  
+  .signupButton {
+    min-width: 100px;
+    font-weight: 600;
+    background-color: #01abee; /* Brighter blue for better visibility */
+  }
+  
+  /* Apply hover effect on touch for mobile */
+  .signupButton:active {
+    background-color: #0098d4;
+  }
 }

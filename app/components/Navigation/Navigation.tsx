@@ -177,11 +177,11 @@ export default function Navigation() {
               </div>
             ) : (
               !isLoginPage && (
-                <div className={styles.authButtons}>
+                <div className={styles.authButtons} data-mobile-auth="true">
                   <Link href="/login" className={styles.loginButton}>
                     Login
                   </Link>
-                  <Link href="/signup" className={styles.signupButton}>
+                  <Link href="/signup" className={`${styles.signupButton} mobile-only-signup`}>
                     Sign Up
                   </Link>
                 </div>
