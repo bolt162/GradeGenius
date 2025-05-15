@@ -130,7 +130,7 @@ const ContactSection: React.FC = () => {
               </div>
               <div className={styles.formGroup}>
                 <label htmlFor="phone" className={styles.label}>
-                  Phone Number <span className={styles.requiredMark}>*</span>
+                  Phone Number
                 </label>
                 <input 
                   type="tel"
@@ -139,7 +139,6 @@ const ContactSection: React.FC = () => {
                   value={formData.phone}
                   onChange={handleInputChange} 
                   className={styles.input}
-                  required
                 />
               </div>
               <div className={styles.formGroup}>
