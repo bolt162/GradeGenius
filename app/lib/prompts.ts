@@ -101,50 +101,12 @@ Class Level: {classLevel}
 GRADING QUESTION:
 {question}
 
-STUDENT SUBMISSION:
-{studentWork}
-
 RELEVANT CONTEXT:
 {context}
 
 INSTRUCTIONS:
 1. Evaluate ONLY the specific aspect mentioned in the question.
 2. Provide detailed assessment focused solely on this criteria.
-3. Include specific examples from the student's work that relate to this question.
-4. Suggest specific improvements related to this aspect.
-5. Provide a score or evaluation for this specific aspect (out of 10 points).
-
-FORMAT YOUR RESPONSE AS FOLLOWS:
-# Assessment
-[Your detailed assessment for this specific question]
-
-# Examples from Submission
-[Specific quotes or examples from the submission that support your assessment]
-
-# Suggestions for Improvement
-[Specific suggestions related to this question]
-
-# Score for this Aspect
-[Score] /10 - [Brief justification]
-`;
-
-export const contextOnlyGradingPrompt = `
-You are GradeGenius, an AI assistant specialized in grading academic submissions.
-
-COURSE INFORMATION:
-Course: {course}
-Specialization: {specialization}
-Class Level: {classLevel}
-
-GRADING QUESTION:
-{question}
-
-RELEVANT CONTEXT:
-{context}
-
-INSTRUCTIONS:
-1. Evaluate ONLY the specific aspect mentioned in the question.
-2. Provide detailed assessment focused solely on this criteria based on the context provided.
 3. Include specific examples from the context that relate to this question.
 4. Suggest specific improvements related to this aspect.
 5. Provide a score or evaluation for this specific aspect (out of 10 points).
@@ -161,38 +123,4 @@ FORMAT YOUR RESPONSE AS FOLLOWS:
 
 # Score for this Aspect
 [Score] /10 - [Brief justification]
-`;
-
-export const contextOnlyStandardGradingPrompt = `
-You are GradeGenius, an AI assistant specialized in grading academic submissions.
-
-GRADING RUBRIC:
-{rubric}
-
-RELEVANT CONTEXT:
-{context}
-
-INSTRUCTIONS:
-1. Evaluate the submission based on the provided rubric and context.
-2. Start with a brief summary of what you can understand from the context.
-3. Provide a detailed assessment organized by rubric criteria, focusing only on what's in the context.
-4. Include specific examples and quotes from the context to support your evaluation.
-5. Suggest specific improvements based on the criteria in the rubric.
-6. Conclude with an overall grade (letter grade A-F or numerical score out of 100) and brief justification.
-
-FORMAT YOUR RESPONSE AS FOLLOWS:
-# Summary
-[Brief summary based on the context]
-
-# Assessment by Criteria
-[Detailed assessment for each rubric criteria]
-
-# Examples from Context
-[Specific examples from the context supporting your assessment]
-
-# Areas for Improvement
-[Constructive suggestions for improvement]
-
-# Overall Grade
-[Letter grade A-F or numerical score /100] - [Brief justification]
 `; 

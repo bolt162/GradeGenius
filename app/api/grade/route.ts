@@ -2,8 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { detectSubmissionType } from '../../lib/contentAnalyzer';
-import { classifySubmissionType } from '../../lib/classificationAgent';
-import { codeGradingPrompt, essayGradingPrompt, defaultGradingPrompt, singleQuestionGradingPrompt, contextOnlyGradingPrompt, contextOnlyStandardGradingPrompt } from '../../lib/prompts';
+import { codeGradingPrompt, essayGradingPrompt, defaultGradingPrompt, singleQuestionGradingPrompt } from '../../lib/prompts';
 import { storeGradeResult, getFileContent, getDocumentContent, getRubric } from '../../lib/s3';
 import { getUserTokens, spendUserTokens, calculateTokens } from '../../lib/dynamo';
 import { cookies } from 'next/headers';
@@ -266,7 +265,6 @@ export async function POST(request: NextRequest) {
             specialization: courseInfo.specialization || "General",
             classLevel: courseInfo.classLevel || "General",
             question: question,
-            studentWork: actualContent,
             context: questionContext ? JSON.stringify(questionContext.chunks) : "No additional context available."
           });
           
@@ -313,110 +311,26 @@ export async function POST(request: NextRequest) {
         responseText = String(response.content);
       }
     } 
-    // For demo requests, we can still use all three approaches
+    // For demo requests, use regular grading
     else {
-      const demoMode = request.nextUrl.searchParams.get('mode');
+      // Choose prompt based on detected type
+      console.log('[Grade API] Demo mode: Regular grading');
+      let promptTemplate;
       
-      if (demoMode === 'contextOnly') {
-        // Demo mode: Context-only grading (for testing)
-        console.log('[Grade API] Demo mode: Context-only grading');
-        
-        let questionResponses = [];
-        
-        // For demo, we'll use a simplified "rubric" with just a couple of questions
-        const demoQuestions = [
-          "Evaluate the overall structure and organization of this work.",
-          "Assess the accuracy and clarity of the ideas presented."
-        ];
-        
-        for (let i = 0; i < demoQuestions.length; i++) {
-          const question = demoQuestions[i];
-          
-          // Skip student work, only provide context
-          const promptTemplate = PromptTemplate.fromTemplate(contextOnlyGradingPrompt);
-          
-          // Get context for this question
-          let questionContext = null;
-          try {
-            questionContext = await ragService.retrieveContext(
-              question,
-              {
-                contentType: detectedType,
-                userId,
-                fileKey: fileKey || undefined
-              }
-            );
-          } catch (contextError) {
-            console.error(`[Grade API] Error retrieving context for demo question ${i+1}:`, contextError);
-          }
-          
-          const formattedPrompt = await promptTemplate.format({
-            course: "Demo Course",
-            specialization: "AI Testing",
-            classLevel: "Advanced",
-            question: question,
-            context: questionContext || "No additional context available."
-          });
-          
-          // Get response from AI model
-          const response = await model.invoke(formattedPrompt);
-          questionResponses.push(String(response.content));
-        }
-        
-        // Combine all responses
-        responseText = questionResponses.join("\n\n---\n\n");
-      } else if (demoMode === 'standardContext') {
-        // Demo mode: Standard grading with context only
-        console.log('[Grade API] Demo mode: Standard grading with context only');
-        
-        let defaultContext = null;
-        try {
-          defaultContext = await ragService.retrieveContext(
-            "Grade this submission",
-            {
-              contentType: detectedType,
-              userId,
-              fileKey: fileKey || undefined
-            }
-          );
-        } catch (contextError) {
-          console.error('[Grade API] Error retrieving context for standard demo:', contextError);
-        }
-        
-        // Use contextOnly standard grading prompt
-        const promptTemplate = PromptTemplate.fromTemplate(contextOnlyStandardGradingPrompt);
-        
-        const formattedPrompt = await promptTemplate.format({
-          rubric: rubric || "Grade on clarity, organization, and accuracy.",
-          context: defaultContext || "No additional context available."
-        });
-        
-        // Get response from AI model
-        const response = await model.invoke(formattedPrompt);
-        responseText = String(response.content);
+      if (detectedType === 'code') {
+        promptTemplate = PromptTemplate.fromTemplate(codeGradingPrompt);
       } else {
-        // Regular demo mode
-        // Choose prompt based on detected type
-        console.log('[Grade API] Demo mode: Regular grading');
-        let promptTemplate;
-        
-        if (detectedType === 'code') {
-          promptTemplate = PromptTemplate.fromTemplate(codeGradingPrompt);
-        } else if (detectedType === 'essay') {
-          promptTemplate = PromptTemplate.fromTemplate(essayGradingPrompt);
-        } else {
-          promptTemplate = PromptTemplate.fromTemplate(defaultGradingPrompt);
-        }
-      
-        const formattedPrompt = await promptTemplate.format({
-          rubric: rubric || "Grade on clarity, organization, and accuracy.",
-          studentWork: actualContent
-        });
-      
-        // Get response from AI model
-        const response = await model.invoke(formattedPrompt);
-        responseText = String(response.content);
+        promptTemplate = PromptTemplate.fromTemplate(essayGradingPrompt);
       }
+    
+      const formattedPrompt = await promptTemplate.format({
+        rubric: rubric || "Grade on clarity, organization, and accuracy.",
+        studentWork: actualContent
+      });
+    
+      // Get response from AI model
+      const response = await model.invoke(formattedPrompt);
+      responseText = String(response.content);
     }
     
     // Store the result in S3 if we have a file key

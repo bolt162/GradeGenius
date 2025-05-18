@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Inactivity timeout in milliseconds (15 minutes)
-const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
-
 // Function to check if a JWT token is potentially valid
 function isValidJwt(token: string): boolean {
   try {
@@ -47,6 +44,12 @@ export async function middleware(request: NextRequest) {
   // Always skip API routes entirely - they handle auth independently
   if (request.nextUrl.pathname.startsWith('/api')) {
     console.log('Skipping API route');
+    return NextResponse.next();
+  }
+
+  // Also skip extension API routes - they use token-based auth instead of cookies
+  if (request.nextUrl.pathname.startsWith('/api/extension')) {
+    console.log('Skipping extension API route - using token auth');
     return NextResponse.next();
   }
 
@@ -100,24 +103,11 @@ export async function middleware(request: NextRequest) {
   const clerkDbJwtCookie = request.cookies.get('__clerk_db_jwt')?.value;
   const clerkCookie = request.cookies.get('__clerk')?.value;
   
-  // Get the last activity timestamp from cookie
-  const lastActivityCookie = request.cookies.get('last_activity')?.value;
-  let lastActivity = lastActivityCookie ? parseInt(lastActivityCookie, 10) : 0;
-  
   console.log(`Found cookies: __session=${!!sessionCookie}, __clerk_db_jwt=${!!clerkDbJwtCookie}, __clerk=${!!clerkCookie}`);
   
   // If no cookies, redirect to login immediately
   if (!sessionCookie && !clerkDbJwtCookie) {
     console.log('No cookies found, redirecting to login');
-    return redirectToLogin(request);
-  }
-  
-  console.log(`Last activity: ${lastActivity ? new Date(lastActivity).toISOString() : 'never'}`);
-  
-  // Check if the user has been inactive for too long
-  const now = Date.now();
-  if (lastActivity && (now - lastActivity > INACTIVITY_TIMEOUT)) {
-    console.log(`User inactive for ${(now - lastActivity) / 1000 / 60} minutes, logging out`);
     return redirectToLogin(request);
   }
   
@@ -142,15 +132,7 @@ export async function middleware(request: NextRequest) {
 
   console.log('Valid session found, allowing access');
   
-  // Update the last activity timestamp
-  const response = NextResponse.next();
-  response.cookies.set('last_activity', now.toString(), {
-    path: '/',
-    httpOnly: true,
-    sameSite: 'lax'
-  });
-  
-  return response;
+  return NextResponse.next();
 }
 
 // Helper function to redirect to login page

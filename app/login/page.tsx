@@ -4,7 +4,7 @@ import Navigation from '../components/Navigation/Navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
-import { useSignIn, useClerk } from '@clerk/nextjs';
+import { useSignIn, useClerk, useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '../components/Footer';
 
@@ -12,6 +12,7 @@ import Footer from '../components/Footer';
 function LoginForm() {
   const { signIn, isLoaded, setActive } = useSignIn();
   const { signOut } = useClerk();
+  const { isSignedIn } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -19,6 +20,16 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Check if user is already signed in and redirect to dashboard
+  useEffect(() => {
+    if (isLoaded && isSignedIn && !isRedirecting && !isSigningOut) {
+      console.log("User is already signed in, redirecting to dashboard");
+      setIsRedirecting(true);
+      router.push('/dashboard');
+    }
+  }, [isLoaded, isSignedIn, router, isRedirecting, isSigningOut]);
 
   // Check if we need to force sign out the user
   useEffect(() => {
@@ -47,7 +58,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isLoaded || isSigningOut) {
+    if (!isLoaded || isSigningOut || isRedirecting) {
       return;
     }
 
@@ -77,6 +88,30 @@ function LoginForm() {
       setIsLoading(false);
     }
   };
+
+  // Show loading state while redirecting
+  if (isRedirecting) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <Image 
+              src="/images/main_logo.png"
+              alt="GradeGenius Logo"
+              width={48}
+              height={48}
+              className="w-auto h-12"
+            />
+          </div>
+          <h1 className="text-3xl font-bold text-neutral-900">Already Signed In</h1>
+          <p className="text-neutral-600 mt-2">Redirecting to dashboard...</p>
+          <div className="mt-4 flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -164,7 +199,7 @@ function LoginForm() {
 
         <button
           type="submit"
-          disabled={isLoading || !isLoaded || isSigningOut}
+          disabled={isLoading || !isLoaded || isSigningOut || isRedirecting}
           className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:opacity-70"
         >
           {isLoading ? 'Signing in...' : isSigningOut ? 'Please wait...' : 'Sign in'}

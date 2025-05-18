@@ -16,9 +16,7 @@ import {
   Mail, 
   Menu, 
   MessageSquare, 
-  Moon, 
   Settings, 
-  Sun, 
   Users, 
   X, 
   Bell,
@@ -44,7 +42,6 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
   const { signOut } = useClerk();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
@@ -82,12 +79,6 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
     setIsSidebarOpen(!isSidebarOpen);
   };
   
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    // You would implement actual dark mode toggling with a theme provider
-  };
-  
   // Toggle profile dropdown
   const toggleProfile = () => {
     setIsProfileOpen(!isProfileOpen);
@@ -119,14 +110,14 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       {/* Top Navigation Bar */}
-      <header className={`fixed top-0 left-0 right-0 z-50 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm h-16 flex items-center px-4`}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 shadow-sm h-16 flex items-center px-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center">
             <button 
               onClick={toggleSidebar} 
-              className={`p-2 rounded-md ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} mr-2`}
+              className="p-2 rounded-md hover:bg-gray-700 mr-2"
             >
               <Menu size={24} />
             </button>
@@ -144,15 +135,8 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
               <TokenDisplay />
             </div>
             
-            <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+            <button className="p-2 rounded-full hover:bg-gray-700">
               <Bell size={20} />
-            </button>
-            
-            <button 
-              onClick={toggleDarkMode} 
-              className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
             
             <div className="relative">
@@ -168,21 +152,21 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
               </button>
               
               {isProfileOpen && (
-                <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} ring-1 ring-black ring-opacity-5`}>
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5">
                   <div className="py-1">
-                    <Link href="/profile" className={`block px-4 py-2 text-sm ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <Link href="/profile" className="block px-4 py-2 text-sm hover:bg-gray-700">
                       Your Profile
                     </Link>
-                    <Link href="/settings" className={`block px-4 py-2 text-sm ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <Link href="/settings" className="block px-4 py-2 text-sm hover:bg-gray-700">
                       Settings
                     </Link>
-                    <Link href="/tokens" className={`block px-4 py-2 text-sm ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} flex items-center`}>
+                    <Link href="/tokens" className="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center">
                       <Coins size={16} className="mr-2" />
                       Buy Tokens
                     </Link>
                     <button 
                       onClick={handleSignOut}
-                      className={`block w-full text-left px-4 py-2 text-sm ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-700"
                     >
                       Sign out
                     </button>
@@ -195,12 +179,12 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
       </header>
       
       {/* Sidebar */}
-      <div className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 -translate-x-full md:w-20 md:translate-x-0'} ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+      <div className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 -translate-x-full md:w-20 md:translate-x-0'} bg-gray-800 shadow-md`}>
         <nav className="h-full py-4 flex flex-col">
           <div className="px-4 space-y-1">
             <Link
               href="/dashboard"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'dashboard' ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-indigo-50 text-indigo-600') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'dashboard' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
             >
               <LayoutDashboard size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Dashboard</span>
@@ -208,7 +192,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             
             <Link
               href="/assignments"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'assignments' ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-indigo-50 text-indigo-600') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'assignments' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
             >
               <FileText size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Assignments</span>
@@ -216,7 +200,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             
             <Link
               href="/analytics"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'analytics' ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-indigo-50 text-indigo-600') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'analytics' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
             >
               <BarChart3 size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Analytics</span>
@@ -224,7 +208,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             
             <Link
               href="/rubrics"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'rubrics' ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-indigo-50 text-indigo-600') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'rubrics' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
             >
               <ClipboardList size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Rubrics</span>
@@ -232,7 +216,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             
             <Link
               href="/tokens"
-              className={`flex items-center py-3 px-3 rounded-md ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              className="flex items-center py-3 px-3 rounded-md hover:bg-gray-700"
             >
               <Coins size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Tokens</span>
@@ -240,7 +224,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             
             <Link
               href="/settings"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'settings' ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-indigo-50 text-indigo-600') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'settings' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
             >
               <Settings size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Settings</span>
@@ -250,7 +234,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
           <div className="mt-auto px-4">
             <Link
               href="/help"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'help' ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-indigo-50 text-indigo-600') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'help' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
             >
               <HelpCircle size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Help & Support</span>
@@ -258,7 +242,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             
             <button
               onClick={handleSignOut}
-              className={`flex items-center w-full text-left py-3 px-3 rounded-md ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              className="flex items-center w-full text-left py-3 px-3 rounded-md hover:bg-gray-700"
             >
               <LogOut size={20} />
               <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Logout</span>
@@ -278,7 +262,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
       </main>
       
       {/* Footer */}
-      <footer className={`py-4 px-6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
+      <footer className={`py-4 px-6 bg-gray-800 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm mb-2 md:mb-0">
             &copy; {new Date().getFullYear()} GradeGenius. All rights reserved.

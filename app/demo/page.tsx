@@ -3,6 +3,9 @@ import Image from 'next/image';
 import { useState } from 'react';
 import Navigation from '../components/Navigation/Navigation';
 import Footer from '../components/Footer';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 export default function DemoPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +75,135 @@ export default function DemoPage() {
     }
   };
 
+  // Format the result with proper Markdown rendering
+  const formatResult = (text: string) => {
+    // Define custom components
+    const components = {
+      // Headings with proper styling (smaller and black)
+      h1: ({children}: {children: React.ReactNode}) => (
+        <h1 className="text-xl font-bold text-black mt-5 mb-3">{children}</h1>
+      ),
+      h2: ({children}: {children: React.ReactNode}) => (
+        <h2 className="text-lg font-bold text-black mt-4 mb-2">{children}</h2>
+      ),
+      h3: ({children}: {children: React.ReactNode}) => (
+        <h3 className="text-base font-bold text-black mt-3 mb-2">{children}</h3>
+      ),
+      h4: ({children}: {children: React.ReactNode}) => (
+        <h4 className="text-sm font-bold text-black mt-3 mb-1">{children}</h4>
+      ),
+      h5: ({children}: {children: React.ReactNode}) => (
+        <h5 className="text-xs font-bold text-black mt-2 mb-1">{children}</h5>
+      ),
+      h6: ({children}: {children: React.ReactNode}) => (
+        <h6 className="text-xs font-bold text-black mt-2 mb-1">{children}</h6>
+      ),
+      // Other text elements (all black)
+      p: ({children}: {children: React.ReactNode}) => (
+        <p className="mb-4 leading-relaxed text-black">{children}</p>
+      ),
+      ul: ({children}: {children: React.ReactNode}) => (
+        <ul className="list-disc pl-6 mb-4 space-y-1 text-black">{children}</ul>
+      ),
+      ol: ({children}: {children: React.ReactNode}) => (
+        <ol className="list-decimal pl-6 mb-4 space-y-1 text-black">{children}</ol>
+      ),
+      li: ({children}: {children: React.ReactNode}) => (
+        <li className="mb-1 text-black">{children}</li>
+      ),
+      blockquote: ({children}: {children: React.ReactNode}) => (
+        <blockquote className="border-l-4 border-gray-300 pl-4 italic my-4 text-black">{children}</blockquote>
+      ),
+      // Table formatting
+      table: ({children}: {children: React.ReactNode}) => (
+        <div className="overflow-x-auto my-6">
+          <table className="min-w-full border border-gray-300 rounded-md text-black">{children}</table>
+        </div>
+      ),
+      thead: ({children}: {children: React.ReactNode}) => (
+        <thead className="bg-gray-100">{children}</thead>
+      ),
+      tbody: ({children}: {children: React.ReactNode}) => (
+        <tbody className="divide-y divide-gray-300">{children}</tbody>
+      ),
+      tr: ({children}: {children: React.ReactNode}) => (
+        <tr className="hover:bg-gray-50 transition-colors">{children}</tr>
+      ),
+      th: ({children}: {children: React.ReactNode}) => (
+        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">{children}</th>
+      ),
+      td: ({children}: {children: React.ReactNode}) => (
+        <td className="px-4 py-3 text-sm border-t border-gray-300 text-black">{children}</td>
+      ),
+      // Formatting for emphasis
+      strong: ({children}: {children: React.ReactNode}) => (
+        <strong className="font-bold text-black">{children}</strong>
+      ),
+      em: ({children}: {children: React.ReactNode}) => (
+        <em className="italic text-black">{children}</em>
+      ),
+      a: ({href, children}: {href?: string, children: React.ReactNode}) => (
+        <a href={href} className="text-blue-600 hover:text-blue-500 underline" target="_blank" rel="noopener noreferrer">{children}</a>
+      ),
+      // Custom code handling with type casting
+      code: ({className, children}: {className?: string, children: React.ReactNode}) => {
+        // Check if this is a code block with a language (not an inline code)
+        const match = /language-(\w+)/.exec(className || '');
+        const content = String(children).replace(/\n$/, '');
+        
+        if (match && typeof children === 'string') {
+          // Code block with language
+          return (
+            // @ts-ignore - Type issues with SyntaxHighlighter
+            <SyntaxHighlighter style={vscDarkPlus} language={match[1]}>
+              {content}
+            </SyntaxHighlighter>
+          );
+        }
+        
+        // Inline code
+        return (
+          <code className="bg-gray-100 px-1 rounded text-black font-mono text-sm">{children}</code>
+        );
+      }
+    };
+
+    // Check if response contains multiple sections separated by delimiter
+    const sections = text.split('\n\n---\n\n');
+    const hasMultipleQuestions = sections.length > 1;
+
+    if (hasMultipleQuestions) {
+      return (
+        <div className="prose max-w-none text-black">
+          {sections.map((section, index) => (
+            <div key={index} className={index > 0 ? "mt-8 pt-8 border-t border-gray-200" : ""}>
+              <div className="bg-gray-50 px-4 py-3 rounded-lg mb-4">
+                <h3 className="text-base font-semibold text-black mb-1">
+                  Question {index + 1}
+                </h3>
+              </div>
+              
+              {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
+              <ReactMarkdown components={components}>
+                {section}
+              </ReactMarkdown>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Default rendering for single section
+    return (
+      <div className="prose max-w-none text-black">
+        {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
+        <ReactMarkdown components={components}>
+          {text}
+        </ReactMarkdown>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50">
       <Navigation />
@@ -79,8 +211,8 @@ export default function DemoPage() {
       <main className="pt-32 pb-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-neutral-900 mb-4">Experience GradeGenius in Action</h1>
-            <p className="text-xl text-neutral-700">Try our AI-powered grading system with your own content</p>
+            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text tracking-tight">Experience GradeGenius in Action</h1>
+            <p className="text-xl text-neutral-700 max-w-2xl mx-auto">Try our AI-powered grading system with your own content</p>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -217,11 +349,7 @@ export default function DemoPage() {
                     </div>
                   )}
                   <div className="flex-grow overflow-auto max-h-[400px] h-[400px] border border-gray-100 rounded-lg p-4">
-                    <div className="prose prose-indigo max-w-none text-black">
-                      {response.split('\n').map((line, i) => (
-                        line ? <p key={i} className="mb-4 text-black">{line}</p> : <br key={i} />
-                      ))}
-                    </div>
+                    {formatResult(response)}
                   </div>
                 </>
               ) : (
