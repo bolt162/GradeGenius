@@ -12,7 +12,7 @@ const HeroSection = () => {
               Grade <span className={styles.shineGradient}>Smarter</span>, Not Harder with AI
             </h1>
             <p className={styles.subtitle}>
-              Revolutionize your grading process with our AI-powered platform. Grade essays, articles, assignments, and code instantly with professional accuracy.
+              Transform your teaching workflow with our advanced AI grading platform. Automatically grade essays, assignments, and code with professional accuracy. Save hours of grading time while providing detailed, consistent feedback to your students.
             </p>
             <div className={styles.buttonRow}>
               <Link href="/demo" className={styles.demoButton}>
@@ -26,7 +26,11 @@ const HeroSection = () => {
             </div>
           </div>
           <div className={styles.rightCol}>
-            <img src="/images/hero-dashboard.png" alt="Dashboard Preview"  />
+            <img 
+              src="/images/hero-dashboard.png" 
+              alt="AI Grading Assistant Dashboard - Automated Essay Grading Platform" 
+              title="GradeGenius AI Grading Platform Interface"
+            />
           </div>
         </div>
       </div>

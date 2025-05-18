@@ -27,6 +27,13 @@ export const metadata: Metadata = {
     apple: { url: '/favicon.png', type: 'image/png' },
     shortcut: { url: '/favicon.png', type: 'image/png' }
   },
+  alternates: {
+    canonical: "https://gradegenius.io/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
