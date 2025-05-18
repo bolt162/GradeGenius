@@ -145,9 +145,9 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
                 className="flex items-center space-x-2"
               >
                 <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
-                  {user?.username?.charAt(0) || 'U'}
+                  {user?.firstName?.charAt(0) || 'U'}
                 </div>
-                <span className="hidden md:block">{user?.username || 'User'}</span>
+                <span className="hidden md:block">{user?.firstName || 'User'}</span>
                 <ChevronDown size={16} />
               </button>
               

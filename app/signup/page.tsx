@@ -12,7 +12,8 @@ export default function SignupPage() {
   const { signUp, isLoaded, setActive } = useSignUp();
   const router = useRouter();
   
-  const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -73,7 +74,8 @@ export default function SignupPage() {
       
       // Start the sign-up process
       const result = await signUp.create({
-        username,
+        firstName,
+        lastName,
         emailAddress: email,
         password,
       });
@@ -124,20 +126,37 @@ export default function SignupPage() {
               {/* Add Clerk CAPTCHA element */}
               <div id="clerk-captcha"></div>
               
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-neutral-700">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-black placeholder-neutral-600"
-                  placeholder="Choose a username"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-neutral-700">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-black placeholder-neutral-600"
+                    placeholder="First name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-neutral-700">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-black placeholder-neutral-600"
+                    placeholder="Last name"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
