@@ -102,6 +102,22 @@ export async function PUT(
       );
     }
     
+    // Validate number of questions doesn't exceed 10
+    if (rubricData.questions && rubricData.questions.length > 10) {
+      return NextResponse.json(
+        { error: 'Rubrics can have at most 10 questions' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate each question is 200 characters or less
+    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > 200)) {
+      return NextResponse.json(
+        { error: 'Each question must be 200 characters or less' },
+        { status: 400 }
+      );
+    }
+    
     console.log('Processing rubric update with data:', {
       key: decodedKey,
       originalKey: rubricData.originalKey,

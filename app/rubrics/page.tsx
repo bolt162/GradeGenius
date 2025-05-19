@@ -198,6 +198,12 @@ export default function RubricsPage() {
 
   // Handle question input changes
   const handleQuestionChange = (index: number, value: string) => {
+    // Limit each question to 200 characters
+    if (value.length > 200) {
+      alert(`Questions are limited to 200 characters. This question has ${value.length} characters.`);
+      return;
+    }
+    
     const updatedQuestions = [...newRubric.questions];
     updatedQuestions[index] = value;
     setNewRubric(prev => ({ ...prev, questions: updatedQuestions }));
@@ -205,6 +211,11 @@ export default function RubricsPage() {
 
   // Add new question field
   const addQuestion = () => {
+    if (newRubric.questions.length >= 10) {
+      alert('You can only add up to 10 questions per rubric');
+      return;
+    }
+    
     setNewRubric(prev => ({ 
       ...prev, 
       questions: [...prev.questions, ''] 
@@ -269,6 +280,12 @@ export default function RubricsPage() {
       
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Check if error is due to maximum rubrics limit
+        if (response.status === 403 && errorData.maxRubricLimitReached) {
+          throw new Error(`You have reached the maximum limit of ${MAX_RUBRICS_PER_USER} rubrics. Please delete some existing rubrics before creating new ones.`);
+        }
+        
         throw new Error(errorData.error || 'Failed to save rubric');
       }
       
@@ -398,6 +415,12 @@ export default function RubricsPage() {
     }
   };
 
+  // Maximum number of rubrics allowed per user
+  const MAX_RUBRICS_PER_USER = 20;
+
+  // Check if user has reached maximum rubrics limit
+  const hasReachedMaxRubrics = rubrics.length >= MAX_RUBRICS_PER_USER;
+
   return (
     <Layout activePage="rubrics">
       <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-6">
@@ -418,13 +441,25 @@ export default function RubricsPage() {
               resetForm();
               setIsCreateModalOpen(true);
             }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center"
-            disabled={isLoading}
+            className={`bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center ${hasReachedMaxRubrics ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={isLoading || hasReachedMaxRubrics}
+            title={hasReachedMaxRubrics ? `You have reached the maximum limit of ${MAX_RUBRICS_PER_USER} rubrics.` : ''}
           >
             <Plus size={18} className="mr-1" />
             Create Rubric
           </button>
         </div>
+
+        {/* Maximum rubrics limit warning */}
+        {hasReachedMaxRubrics && (
+          <div className="mb-4 p-3 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 rounded-md flex items-start">
+            <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Maximum Rubrics Limit Reached</p>
+              <p className="text-sm">You have reached the maximum limit of {MAX_RUBRICS_PER_USER} rubrics. Please delete some existing rubrics before creating new ones.</p>
+            </div>
+          </div>
+        )}
 
         {/* Search and filter bar */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -555,7 +590,7 @@ export default function RubricsPage() {
             <p className="text-gray-500 dark:text-gray-400 mb-4">
               {searchQuery ? 'No rubrics match your search criteria.' : 'You haven\'t created any rubrics yet.'}
             </p>
-            {!searchQuery && (
+            {!searchQuery && !hasReachedMaxRubrics && (
               <button
                 onClick={() => {
                   resetForm();
@@ -855,7 +890,11 @@ export default function RubricsPage() {
                             rows={2}
                             value={question}
                             onChange={(e) => handleQuestionChange(index, e.target.value)}
+                            maxLength={200}
                           />
+                          <div className="text-xs text-gray-500 mt-1 text-right">
+                            {question.length}/200 characters
+                          </div>
                         </div>
                         {newRubric.questions.length > 1 && (
                           <button

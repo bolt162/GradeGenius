@@ -15,6 +15,18 @@ export default function TestUploadPage() {
     if (!files || files.length === 0) return;
     
     const file = files[0];
+    
+    // Check file size (5MB limit)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadStatus('error');
+      setUploadMessage('File size exceeds the maximum allowed limit of 5MB.');
+      
+      // Reset file input
+      event.target.value = '';
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('file', file);
     
@@ -29,7 +41,8 @@ export default function TestUploadPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
       
       const data = await response.json();
@@ -44,7 +57,7 @@ export default function TestUploadPage() {
     } catch (error) {
       console.error('Error uploading file:', error);
       setUploadStatus('error');
-      setUploadMessage('Failed to upload file. Please try again.');
+      setUploadMessage(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
     }
   };
 

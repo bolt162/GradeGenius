@@ -68,9 +68,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Calculate tokens for all requests to use in the response
-    const combinedContent = studentWork + (rubric || '');
-    const tokensNeeded = calculateTokens(combinedContent);
+    // Each grading operation costs exactly 1 token
+    const tokensNeeded = 1;
     
     // Skip token check for demo requests
     if (!isDemo) {
@@ -343,7 +342,8 @@ export async function POST(request: NextRequest) {
           userId,
           responseText,
           rubric || 'Grade on clarity, organization, and accuracy.',
-          user_name
+          user_name,
+          rubricQuestions
         );
         console.log('[Grade API] Stored grading result:', resultKey);
       } catch (error) {

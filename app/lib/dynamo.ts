@@ -22,8 +22,8 @@ const docClient = DynamoDBDocumentClient.from(client);
 // Table name for user tokens
 const USER_TOKENS_TABLE = process.env.DYNAMODB_USER_TOKENS_TABLE || 'GradeGenius-UserTokens';
 
-// Initial tokens for new users
-const INITIAL_TOKEN_AMOUNT = 20000;
+// Initial tokens for new users - each token represents one grading operation
+const INITIAL_TOKEN_AMOUNT = 12;
 
 /**
  * Get a user's token balance
@@ -120,10 +120,10 @@ export async function addUserTokens(userId: string, amount: number): Promise<num
 /**
  * Use tokens from a user's balance
  * @param userId The user's unique ID
- * @param amount The amount of tokens to use
+ * @param amount The amount of tokens to use (default is 1 token per grading operation)
  * @returns The new token balance or null if an error occurred (e.g., insufficient tokens)
  */
-export async function spendUserTokens(userId: string, amount: number): Promise<number | null> {
+export async function spendUserTokens(userId: string, amount: number = 1): Promise<number | null> {
   if (amount <= 0) {
     return null;
   }
@@ -156,14 +156,11 @@ export async function spendUserTokens(userId: string, amount: number): Promise<n
 }
 
 /**
- * Calculate token count for content
- * This is a simple estimation function - in a real-world scenario, 
- * you would use an actual tokenizer like tiktoken or similar
- * @param content Content to calculate tokens for
- * @returns Estimated token count
+ * Calculate token cost for grading operation
+ * This function always returns 1 as each grading operation costs exactly 1 token
+ * @returns Fixed token cost of 1 per grading operation
  */
 export function calculateTokens(content: string): number {
-  // Simple approximation - tokens are roughly ~4 characters on average
-  // This is a very simplistic count - for production, use a proper tokenizer
-  return Math.ceil(content.length / 4);
+  // Each grading operation costs exactly 1 token, regardless of content size
+  return 1;
 } 

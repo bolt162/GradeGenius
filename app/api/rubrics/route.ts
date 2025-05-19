@@ -2,6 +2,9 @@ import { NextResponse, NextRequest } from 'next/server';
 import { listUserRubrics, storeRubric } from '@/app/lib/s3';
 import { getAuthFromCookies } from '@/app/lib/auth-utils';
 
+// Maximum number of rubrics allowed per user
+const MAX_RUBRICS_PER_USER = 20;
+
 // GET /api/rubrics - Get all rubrics for the current user
 export async function GET() {
   try {
@@ -39,6 +42,20 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Get existing rubrics to check if user has reached the limit
+    const existingRubrics = await listUserRubrics(userId, username);
+    
+    // Check if user has reached the maximum rubrics limit
+    if (existingRubrics.length >= MAX_RUBRICS_PER_USER) {
+      return NextResponse.json(
+        { 
+          error: `You have reached the maximum limit of ${MAX_RUBRICS_PER_USER} rubrics. Please delete some rubrics before creating new ones.`,
+          maxRubricLimitReached: true
+        },
+        { status: 403 }
+      );
+    }
+    
     // Parse the request body
     const rubricData = await request.json();
     
@@ -46,6 +63,22 @@ export async function POST(request: NextRequest) {
     if (!rubricData.name || !rubricData.classLevel || !rubricData.course || !rubricData.specialization) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate number of questions doesn't exceed 10
+    if (rubricData.questions && rubricData.questions.length > 10) {
+      return NextResponse.json(
+        { error: 'Rubrics can have at most 10 questions' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate each question is 200 characters or less
+    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > 200)) {
+      return NextResponse.json(
+        { error: 'Each question must be 200 characters or less' },
         { status: 400 }
       );
     }

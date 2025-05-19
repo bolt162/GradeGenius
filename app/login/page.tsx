@@ -103,7 +103,7 @@ function LoginForm() {
               className="w-auto h-12"
             />
           </div>
-          <h1 className="text-3xl font-bold text-neutral-900">Already Signed In</h1>
+          <h1 className="text-3xl font-bold text-neutral-900">Signing In</h1>
           <p className="text-neutral-600 mt-2">Redirecting to dashboard...</p>
           <div className="mt-4 flex justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
@@ -125,7 +125,7 @@ function LoginForm() {
             className="w-auto h-12"
           />
         </div>
-        <h1 className="text-3xl font-bold text-neutral-900">Welcome Back</h1>
+        <h1 className="text-3xl font-bold text-neutral-900">Welcome</h1>
         <p className="text-neutral-600 mt-2">Sign in to your account</p>
       </div>
 
@@ -226,7 +226,7 @@ function LoginFormFallback() {
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse" />
         </div>
-        <h1 className="text-3xl font-bold text-neutral-900">Welcome Back</h1>
+        <h1 className="text-3xl font-bold text-neutral-900">Welcome</h1>
         <p className="text-neutral-600 mt-2">Sign in to your account</p>
       </div>
       <div className="space-y-6">

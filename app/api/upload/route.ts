@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile } from '@/app/lib/s3';
 import { cookies } from 'next/headers';
 
+// Define the maximum file size (5MB)
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+
 // POST /api/upload - Upload a file
 export async function POST(request: NextRequest) {
   try {
@@ -41,6 +44,13 @@ export async function POST(request: NextRequest) {
     
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+    
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ 
+        error: 'File size exceeds the maximum allowed limit of 5MB'
+      }, { status: 413 });
     }
     
     // Convert the file to a Buffer

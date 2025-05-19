@@ -169,6 +169,18 @@ function GradePageContent() {
     if (!files || files.length === 0) return;
     
     const file = files[0];
+    
+    // Check file size (5MB limit)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadStatus('error');
+      setUploadMessage('File size exceeds the maximum allowed limit of 5MB.');
+      
+      // Reset file input
+      event.target.value = '';
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('file', file);
     
@@ -187,7 +199,8 @@ function GradePageContent() {
       });
       
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
       
       const data = await response.json();
@@ -216,7 +229,7 @@ function GradePageContent() {
       event.target.value = '';
     } catch (error) {
       setUploadStatus('error');
-      setUploadMessage('Failed to upload file. Please try again.');
+      setUploadMessage(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
     }
   };
 
@@ -408,6 +421,57 @@ function GradePageContent() {
     const sections = text.split('\n\n---\n\n');
     const hasMultipleQuestions = sections.length > 1;
     
+    // Extract numeric scores from the text (look for patterns like "Score: 8/10" or "Grade: 85%")
+    const scoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*%)/gi;
+    
+    let totalScore = 0;
+    let totalPossible = 0;
+    let scoreCount = 0;
+    
+    // Function to extract scores from a single section
+    const extractScores = (content: string) => {
+      let matches;
+      // Reset the lastIndex to ensure we start from the beginning
+      scoreRegex.lastIndex = 0;
+      while ((matches = scoreRegex.exec(content)) !== null) {
+        // Check which regex group matched
+        if (matches[1] && matches[2]) {
+          // Score: X/Y format
+          totalScore += Number(matches[1]);
+          totalPossible += Number(matches[2]);
+          scoreCount++;
+        } else if (matches[3] && matches[4]) {
+          // X/Y format without "Score:" prefix
+          totalScore += Number(matches[3]);
+          totalPossible += Number(matches[4]);
+          scoreCount++;
+        } else if (matches[5]) {
+          // Percentage format
+          const percentageScore = Number(matches[5]);
+          totalScore += percentageScore;
+          totalPossible += 100;
+          scoreCount++;
+        }
+      }
+    };
+    
+    // Extract scores from each section
+    if (hasMultipleQuestions) {
+      sections.forEach(section => extractScores(section));
+    } else {
+      extractScores(text);
+    }
+    
+    // Calculate overall score
+    let overallScore = '';
+    if (scoreCount > 0) {
+      if (totalPossible > 0) {
+        // Always show as percentage out of 100
+        const percentage = Math.round((totalScore / totalPossible) * 100);
+        overallScore = `${percentage} out of 100`;
+      }
+    }
+    
     // Define custom components with explicit type casting to avoid TS errors
     const components = {
       // Headings with proper styling
@@ -503,6 +567,14 @@ function GradePageContent() {
     if (hasMultipleQuestions) {
       return (
         <div className="prose prose-invert max-w-none">
+          {/* Display overall score if available */}
+          {overallScore && (
+            <div className="bg-indigo-900/40 p-4 rounded-lg mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white m-0">Overall Score</h2>
+              <div className="text-2xl font-bold text-indigo-300">{overallScore}</div>
+            </div>
+          )}
+          
           {sections.map((section, index) => (
             <div key={index} className={index > 0 ? "mt-8 pt-8 border-t border-gray-700" : ""}>
               <div className="bg-gray-900/50 px-4 py-3 rounded-lg mb-4">
@@ -529,6 +601,14 @@ function GradePageContent() {
     // Default rendering for single section
     return (
       <div className="prose prose-invert max-w-none">
+        {/* Display overall score if available */}
+        {overallScore && (
+          <div className="bg-indigo-900/40 p-4 rounded-lg mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white m-0">Overall Score</h2>
+            <div className="text-2xl font-bold text-indigo-300">{overallScore}</div>
+          </div>
+        )}
+        
         {/* Display the question even for a single question */}
         {selectedRubricDetails && selectedRubricDetails.questions && selectedRubricDetails.questions.length > 0 && (
           <div className="bg-gray-900/50 px-4 py-3 rounded-lg mb-4">

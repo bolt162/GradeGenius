@@ -35,6 +35,7 @@ export default function AssignmentsPage() {
   const [isGradeLoading, setIsGradeLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
+  const [rubricQuestions, setRubricQuestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -118,6 +119,9 @@ export default function AssignmentsPage() {
       
       const data = await response.json();
       setGradeFeedback(data.grade?.gradeResult || 'No feedback available');
+      
+      // Store the rubric questions from the grade data
+      setRubricQuestions(data.grade?.rubricQuestions || []);
     } catch (error) {
       console.error('Error fetching grade feedback:', error);
       setGradeFeedback('Error loading feedback. Please try again.');
@@ -130,6 +134,7 @@ export default function AssignmentsPage() {
     setIsGradeModalOpen(false);
     setSelectedGradeKey(null);
     setGradeFeedback(null);
+    setRubricQuestions([]);
   };
 
   const handleDeleteFile = async (fileKey: string) => {
@@ -205,6 +210,24 @@ export default function AssignmentsPage() {
     }
     
     const file = files[0];
+    
+    // Check file size (5MB limit)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadStatus('error');
+      setUploadMessage('File size exceeds the maximum allowed limit of 5MB.');
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setUploadMessage('');
+      }, 5000);
+      
+      // Reset file input
+      event.target.value = '';
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('file', file);
     
@@ -218,7 +241,8 @@ export default function AssignmentsPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
       
       // Handle successful upload
@@ -239,7 +263,7 @@ export default function AssignmentsPage() {
     } catch (error) {
       console.error('Error uploading file:', error);
       setUploadStatus('error');
-      setUploadMessage('Failed to upload file. Please try again.');
+      setUploadMessage(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
       
       // Clear error message after 5 seconds
       setTimeout(() => {
@@ -272,6 +296,59 @@ export default function AssignmentsPage() {
 
   // Format markdown content for grade feedback
   const formatResult = (text: string) => {
+    // Check if the result contains multiple question sections separated by the delimiter
+    const sections = text.split('\n\n---\n\n');
+    const hasMultipleQuestions = sections.length > 1;
+    
+    // Extract numeric scores from the text (look for patterns like "Score: 8/10" or "Grade: 85%")
+    const scoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*%)/gi;
+    
+    let totalScore = 0;
+    let totalPossible = 0;
+    let scoreCount = 0;
+    
+    // Function to extract scores from a single section
+    const extractScores = (content: string) => {
+      let matches;
+      while ((matches = scoreRegex.exec(content)) !== null) {
+        // Check which regex group matched
+        if (matches[1] && matches[2]) {
+          // Score: X/Y format
+          totalScore += Number(matches[1]);
+          totalPossible += Number(matches[2]);
+          scoreCount++;
+        } else if (matches[3] && matches[4]) {
+          // X/Y format without "Score:" prefix
+          totalScore += Number(matches[3]);
+          totalPossible += Number(matches[4]);
+          scoreCount++;
+        } else if (matches[5]) {
+          // Percentage format
+          const percentageScore = Number(matches[5]);
+          totalScore += percentageScore;
+          totalPossible += 100;
+          scoreCount++;
+        }
+      }
+    };
+    
+    // Extract scores from each section
+    if (hasMultipleQuestions) {
+      sections.forEach(section => extractScores(section));
+    } else {
+      extractScores(text);
+    }
+    
+    // Calculate overall score
+    let overallScore = '';
+    if (scoreCount > 0) {
+      if (totalPossible > 0) {
+        // Always show as percentage out of 100
+        const percentage = Math.round((totalScore / totalPossible) * 100);
+        overallScore = `${percentage} out of 100`;
+      }
+    }
+
     // Define custom components with explicit type casting to avoid TS errors
     const components = {
       // Headings with proper styling
@@ -363,13 +440,57 @@ export default function AssignmentsPage() {
       }
     };
 
-    // Use ReactMarkdown with our custom components
+    // If there are multiple questions/sections, render them with separators
     return (
       <div className="prose prose-invert max-w-none">
-        {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
-        <ReactMarkdown components={components}>
-          {text}
-        </ReactMarkdown>
+        {/* Display overall score if available */}
+        {overallScore && (
+          <div className="bg-indigo-900/40 p-4 rounded-lg mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white m-0">Overall Score</h2>
+            <div className="text-2xl font-bold text-indigo-300">{overallScore}</div>
+          </div>
+        )}
+        
+        {hasMultipleQuestions ? (
+          sections.map((section, index) => (
+            <div key={index} className={index > 0 ? "mt-8 pt-8 border-t border-gray-700" : ""}>
+              <div className="bg-gray-900/50 px-4 py-3 rounded-lg mb-4">
+                <h3 className="text-lg font-semibold text-indigo-400 mb-1">
+                  Question {index + 1}
+                </h3>
+                {rubricQuestions.length > index && (
+                  <p className="text-gray-300 italic">
+                    {rubricQuestions[index]}
+                  </p>
+                )}
+              </div>
+              
+              {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
+              <ReactMarkdown components={components}>
+                {section}
+              </ReactMarkdown>
+            </div>
+          ))
+        ) : (
+          <>
+            {/* Display the rubric question even for a single question */}
+            {rubricQuestions.length > 0 && (
+              <div className="bg-gray-900/50 px-4 py-3 rounded-lg mb-4">
+                <h3 className="text-lg font-semibold text-indigo-400 mb-1">
+                  Question
+                </h3>
+                <p className="text-gray-300 italic">
+                  {rubricQuestions[0]}
+                </p>
+              </div>
+            )}
+            
+            {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
+            <ReactMarkdown components={components}>
+              {text}
+            </ReactMarkdown>
+          </>
+        )}
       </div>
     );
   };
