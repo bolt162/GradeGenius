@@ -20,7 +20,6 @@ import {
   Settings, 
   Users, 
   X, 
-  Bell,
   CheckCircle,
   HelpCircle,
   LayoutDashboard,
@@ -173,10 +172,6 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
             {/* Theme Toggle - Now showing on all pages */}
             {isMounted && <ThemeToggle />}
             
-            <button className="p-2 rounded-full hover:bg-[var(--bg-tertiary)]">
-              <Bell size={20} />
-            </button>
-            
             <div className="relative">
               <button 
                 onClick={toggleProfile}
@@ -192,9 +187,6 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[var(--card-bg)] ring-1 ring-black ring-opacity-5">
                   <div className="py-1">
-                    <Link href="/profile" className="block px-4 py-2 text-sm hover:bg-[var(--bg-tertiary)]">
-                      Your Profile
-                    </Link>
                     <Link href="/settings" className="block px-4 py-2 text-sm hover:bg-[var(--bg-tertiary)]">
                       Settings
                     </Link>
