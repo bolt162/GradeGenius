@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { FileText, Upload, AlertCircle, CheckCircle, Award, Trash2, Clock } from 'lucide-react';
+import { FileText, Upload, AlertCircle, CheckCircle, Award, Trash2, Clock, X } from 'lucide-react';
 import Layout from '../components/Layout';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import styles from './assignments.module.css';
+import { useTheme } from '../context/ThemeContext';
 
 interface Assignment {
   key: string;
@@ -25,6 +26,7 @@ interface Assignment {
 
 export default function AssignmentsPage() {
   const { user, isLoaded } = useUser();
+  const { theme } = useTheme();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +114,8 @@ export default function AssignmentsPage() {
     setIsGradeModalOpen(true);
     
     try {
+      // Use the selected key for additional tracking if needed in the future
+      console.log('Fetching feedback for:', selectedGradeKey);
       const response = await fetch(`/api/grade/${encodeURIComponent(fileKey)}`);
       
       if (!response.ok) {
@@ -354,26 +358,26 @@ export default function AssignmentsPage() {
     const components = {
       // Headings with proper styling
       h1: ({children}: {children: React.ReactNode}) => (
-        <h1 className="text-2xl font-bold text-indigo-400 mt-6 mb-4">{children}</h1>
+        <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mt-6 mb-4 font-oswald`}>{children}</h1>
       ),
       h2: ({children}: {children: React.ReactNode}) => (
-        <h2 className="text-xl font-bold text-indigo-400 mt-5 mb-3">{children}</h2>
+        <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mt-5 mb-3 font-oswald`}>{children}</h2>
       ),
       h3: ({children}: {children: React.ReactNode}) => (
-        <h3 className="text-lg font-bold text-indigo-400 mt-4 mb-2">{children}</h3>
+        <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mt-4 mb-2 font-oswald`}>{children}</h3>
       ),
       h4: ({children}: {children: React.ReactNode}) => (
-        <h4 className="text-base font-bold text-indigo-400 mt-3 mb-2">{children}</h4>
+        <h4 className={`text-base font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mt-3 mb-2 font-oswald`}>{children}</h4>
       ),
       h5: ({children}: {children: React.ReactNode}) => (
-        <h5 className="text-sm font-bold text-indigo-400 mt-3 mb-1">{children}</h5>
+        <h5 className={`text-sm font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mt-3 mb-1 font-oswald`}>{children}</h5>
       ),
       h6: ({children}: {children: React.ReactNode}) => (
-        <h6 className="text-xs font-bold text-indigo-400 mt-3 mb-1">{children}</h6>
+        <h6 className={`text-xs font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mt-3 mb-1 font-oswald`}>{children}</h6>
       ),
       // Other text elements
       p: ({children}: {children: React.ReactNode}) => (
-        <p className="mb-4 leading-relaxed">{children}</p>
+        <p className={`mb-4 leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} font-oswald`}>{children}</p>
       ),
       ul: ({children}: {children: React.ReactNode}) => (
         <ul className="list-disc pl-6 mb-4 space-y-1">{children}</ul>
@@ -382,41 +386,41 @@ export default function AssignmentsPage() {
         <ol className="list-decimal pl-6 mb-4 space-y-1">{children}</ol>
       ),
       li: ({children}: {children: React.ReactNode}) => (
-        <li className="mb-1">{children}</li>
+        <li className={`mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} font-oswald`}>{children}</li>
       ),
       blockquote: ({children}: {children: React.ReactNode}) => (
-        <blockquote className="border-l-4 border-indigo-500 pl-4 italic my-4 text-gray-300">{children}</blockquote>
+        <blockquote className={`border-l-4 ${theme === 'dark' ? 'border-indigo-500 text-gray-300' : 'border-indigo-600 text-gray-600'} pl-4 italic my-4`}>{children}</blockquote>
       ),
       // Table formatting
       table: ({children}: {children: React.ReactNode}) => (
         <div className="overflow-x-auto my-6">
-          <table className="min-w-full border border-gray-700 rounded-md">{children}</table>
+          <table className={`min-w-full border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'} rounded-md`}>{children}</table>
         </div>
       ),
       thead: ({children}: {children: React.ReactNode}) => (
-        <thead className="bg-gray-700">{children}</thead>
+        <thead className={theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}>{children}</thead>
       ),
       tbody: ({children}: {children: React.ReactNode}) => (
-        <tbody className="divide-y divide-gray-700">{children}</tbody>
+        <tbody className={`divide-y ${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'}`}>{children}</tbody>
       ),
       tr: ({children}: {children: React.ReactNode}) => (
-        <tr className="hover:bg-gray-700/50 transition-colors">{children}</tr>
+        <tr className={`hover:${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'} transition-colors`}>{children}</tr>
       ),
       th: ({children}: {children: React.ReactNode}) => (
-        <th className="px-4 py-3 text-left text-xs font-medium text-indigo-300 uppercase tracking-wider">{children}</th>
+        <th className={`px-4 py-3 text-left text-xs font-medium ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'} uppercase tracking-wider font-oswald`}>{children}</th>
       ),
       td: ({children}: {children: React.ReactNode}) => (
-        <td className="px-4 py-3 text-sm border-t border-gray-700">{children}</td>
+        <td className={`px-4 py-3 text-sm border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{children}</td>
       ),
       // Formatting for emphasis
       strong: ({children}: {children: React.ReactNode}) => (
-        <strong className="font-bold text-white">{children}</strong>
+        <strong className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{children}</strong>
       ),
       em: ({children}: {children: React.ReactNode}) => (
-        <em className="italic text-gray-300">{children}</em>
+        <em className={`italic ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{children}</em>
       ),
       a: ({href, children}: {href?: string, children: React.ReactNode}) => (
-        <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>
+        <a href={href} className={`${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} underline`} target="_blank" rel="noopener noreferrer">{children}</a>
       ),
       // Custom code handling with type casting
       code: ({className, children}: {className?: string, children: React.ReactNode}) => {
@@ -427,7 +431,6 @@ export default function AssignmentsPage() {
         if (match && typeof children === 'string') {
           // Code block with language
           return (
-            // @ts-ignore - Type issues with SyntaxHighlighter
             <SyntaxHighlighter style={vscDarkPlus} language={match[1]}>
               {content}
             </SyntaxHighlighter>
@@ -436,7 +439,7 @@ export default function AssignmentsPage() {
         
         // Inline code
         return (
-          <code className="bg-gray-700 px-1 rounded text-white font-mono text-sm">{children}</code>
+          <code className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'} px-1 rounded font-mono text-sm`}>{children}</code>
         );
       }
     };
@@ -446,27 +449,27 @@ export default function AssignmentsPage() {
       <div className="prose prose-invert max-w-none">
         {/* Display overall score if available */}
         {overallScore && (
-          <div className="bg-indigo-900/40 p-4 rounded-lg mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white m-0">Overall Score</h2>
-            <div className="text-2xl font-bold text-indigo-300">{overallScore}</div>
+          <div className={`${theme === 'dark' ? 'bg-indigo-900/40' : 'bg-indigo-100'} p-4 rounded-lg mb-6 flex items-center justify-between`}>
+            <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'} m-0 font-oswald`}>Overall Score</h2>
+            <div className={`text-2xl font-bold ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'} font-oswald`}>{overallScore}</div>
           </div>
         )}
         
         {hasMultipleQuestions ? (
           sections.map((section, index) => (
-            <div key={index} className={index > 0 ? "mt-8 pt-8 border-t border-gray-700" : ""}>
-              <div className="bg-gray-900/50 px-4 py-3 rounded-lg mb-4">
-                <h3 className="text-lg font-semibold text-indigo-400 mb-1">
+            <div key={index} className={index > 0 ? `mt-8 pt-8 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'}` : ""}>
+              <div className={`${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-100'} px-4 py-3 rounded-lg mb-4`}>
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
                   Question {index + 1}
                 </h3>
                 {rubricQuestions.length > index && (
-                  <p className="text-gray-300 italic">
+                  <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
                     {rubricQuestions[index]}
                   </p>
                 )}
               </div>
               
-              {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
+              {/* @ts-expect-error - Required for ReactMarkdown components */}
               <ReactMarkdown components={components}>
                 {section}
               </ReactMarkdown>
@@ -476,17 +479,17 @@ export default function AssignmentsPage() {
           <>
             {/* Display the rubric question even for a single question */}
             {rubricQuestions.length > 0 && (
-              <div className="bg-gray-900/50 px-4 py-3 rounded-lg mb-4">
-                <h3 className="text-lg font-semibold text-indigo-400 mb-1">
+              <div className={`${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-100'} px-4 py-3 rounded-lg mb-4`}>
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
                   Question
                 </h3>
-                <p className="text-gray-300 italic">
+                <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
                   {rubricQuestions[0]}
                 </p>
               </div>
             )}
             
-            {/* @ts-ignore - Using the type ignore for ReactMarkdown props */}
+            {/* @ts-expect-error - Required for ReactMarkdown components */}
             <ReactMarkdown components={components}>
               {text}
             </ReactMarkdown>
@@ -573,7 +576,7 @@ export default function AssignmentsPage() {
             <FileText size={48} className="mb-4 opacity-50" />
             <h3 className="text-xl font-medium mb-2">No assignments uploaded yet</h3>
             <p className="text-gray-500 mb-6 text-center max-w-md">
-              Upload your first assignment by clicking the "Upload Assignment" button above.
+              Upload your first assignment by clicking the &quot;Upload Assignment&quot; button above.
             </p>
             <label 
               htmlFor="file-upload" 
@@ -672,33 +675,32 @@ export default function AssignmentsPage() {
       {/* Grade Feedback Modal */}
       {isGradeModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg max-w-3xl w-full max-h-[80vh] flex flex-col">
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-              <h3 className="text-xl font-medium">Grade Feedback</h3>
+          <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg max-w-3xl w-full max-h-[80vh] flex flex-col shadow-xl`}>
+            <div className={`p-4 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} border-b flex justify-between items-center`}>
+              <h3 className={`text-xl font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Grade Feedback</h3>
               <button 
                 onClick={closeGradeModal}
-                className="text-gray-400 hover:text-gray-300"
+                className={`${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} transition-colors`}
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X size={24} />
               </button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-grow">
               {isGradeLoading ? (
                 <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                  <div className={`animate-spin h-10 w-10 border-4 ${theme === 'dark' ? 'border-blue-500 border-t-transparent' : 'border-indigo-600 border-t-transparent'} rounded-full`}></div>
                 </div>
               ) : (
                 gradeFeedback && formatResult(gradeFeedback)
               )}
             </div>
             
-            <div className="p-4 border-t border-gray-700 flex justify-end">
+            <div className={`p-4 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} border-t flex justify-end`}>
               <button
                 onClick={closeGradeModal}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md"
+                className={`px-4 py-2 ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'} rounded-md font-oswald transition-colors`}
               >
                 Close
               </button>
