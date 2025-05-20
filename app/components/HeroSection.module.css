@@ -6,7 +6,7 @@
         #e0e7ff 0%, /* light blue */
         #f3e8ff 40%, /* light purple */
         #fce7f3 70%, /* light pink */
-        #ffffff 100% /* very light blue for the edges */
+        #b9def9 100% /* very light blue for the edges */
     );
     display: flex;
     align-items: center;

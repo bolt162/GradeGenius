@@ -10,6 +10,28 @@ export default function TokenDisplay() {
   const [tokens, setTokens] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentTheme, setCurrentTheme] = useState<string>('dark');
+  
+  // Track theme changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+      setCurrentTheme(theme);
+      
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === 'data-theme') {
+            const newTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            setCurrentTheme(newTheme);
+          }
+        });
+      });
+      
+      observer.observe(document.documentElement, { attributes: true });
+      
+      return () => observer.disconnect();
+    }
+  }, []);
 
   useEffect(() => {
     const fetchTokenInfo = async () => {
@@ -62,18 +84,12 @@ export default function TokenDisplay() {
   // Format number with commas
   const formattedTokens = tokens.toLocaleString();
 
-  const tokenColor = tokens > 5000 
-    ? 'text-green-400' 
-    : tokens > 1000 
-      ? 'text-yellow-400' 
-      : 'text-red-400';
-
   return (
-    <div className="flex items-center p-2 bg-gray-800 rounded-md text-sm">
-      <Coins size={16} className={`${tokenColor} mr-2`} />
-      <span className="text-gray-300 mr-1">Tokens:</span>
-      <span className={`font-medium ${tokenColor}`}>{formattedTokens}</span>
-      <Link href="/tokens" className="ml-3 text-blue-400 hover:text-blue-300 flex items-center">
+    <div className={`flex items-center p-2 ${currentTheme === 'light' ? 'bg-white border border-black' : 'bg-gray-800'} rounded-md text-sm`}>
+      <Coins size={16} className={`${currentTheme === 'light' ? 'text-black' : 'text-gray-300'} mr-2`} />
+      <span className={`${currentTheme === 'light' ? 'text-black' : 'text-gray-300'} mr-1 font-[var(--font-oswald)]`}>Tokens:</span>
+      <span className={`font-medium ${currentTheme === 'light' ? 'text-black' : 'text-gray-300'}`}>{formattedTokens}</span>
+      <Link href="/tokens" className="ml-3 text-[#0255ab] hover:text-blue-700 flex items-center font-medium font-[var(--font-oswald)]">
         <CreditCard size={14} className="mr-1" />
         <span>Buy More</span>
       </Link>

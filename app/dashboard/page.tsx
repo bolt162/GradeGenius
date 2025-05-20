@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { 
-  BarChart3, 
   ClipboardCheck, 
   Clock, 
   FileText, 
@@ -15,6 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Layout from '../components/Layout';
+import styles from './dashboard.module.css';
 
 interface Assignment {
   key: string;
@@ -232,27 +232,20 @@ export default function Dashboard() {
     return `${months} month${months !== 1 ? 's' : ''} ago`;
   };
   
-  // Sample data for grading queue
-  const gradingQueue = [
-    { id: 101, studentName: 'Alex Johnson', title: 'Essay on Modern Literature', dueIn: '12 hours', priority: 'High', submittedAt: 'May 15, 2023' },
-    { id: 102, studentName: 'Michael Patel', title: 'Scientific Report', dueIn: '2 days', priority: 'Medium', submittedAt: 'May 14, 2023' },
-    { id: 103, studentName: 'Jessica Martinez', title: 'Economics Case Study', dueIn: '3 days', priority: 'Low', submittedAt: 'May 13, 2023' },
-  ];
-  
   return (
     <Layout activePage="dashboard">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-500 rounded-lg overflow-hidden shadow-lg mb-6">
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-between">
+      <div className={styles.welcomeBanner}>
+        <div className={styles.welcomeContent}>
+          <div className={styles.welcomeHeader}>
             <div>
-              <h2 className="text-xl font-semibold text-white">Welcome back, {user?.username || user?.firstName || 'Teacher'}!</h2>
-              <p className="text-indigo-100">{currentDate}</p>
+              <h2 className={styles.welcomeText}>Welcome, {user?.username || user?.firstName || 'Teacher'}!</h2>
+              <p className={styles.welcomeDate}>{currentDate}</p>
             </div>
-            <div className="hidden md:flex items-center space-x-2">
+            <div className={styles.headerButtonsContainer}>
               <Link 
                 href="/grade" 
-                className="bg-white text-indigo-600 px-4 py-2 rounded-md font-medium hover:bg-indigo-50 flex items-center"
+                className={styles.uploadButton}
               >
                 <Upload className="mr-2" size={18} />
                 Upload & Grade New Assignment
@@ -263,16 +256,16 @@ export default function Dashboard() {
       </div>
       
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+      <div className={styles.metricsGrid}>
         {metrics.map((metric, index) => (
-          <div key={index} className={`bg-gray-800 rounded-lg shadow-lg p-6 border-t-4 border-${metric.color.split(' ')[1]}`}>
-            <div className="flex justify-between items-start">
+          <div key={index} className={`${styles.metricCard} border-${metric.color.split(' ')[1]}`}>
+            <div className={styles.metricHeader}>
               <div>
-                <p className="text-gray-400 text-sm font-medium">{metric.title}</p>
-                <h3 className="text-2xl font-bold mt-1">{metric.value}</h3>
-                <p className="text-xs text-gray-500 mt-1">{metric.change}</p>
+                <p className={styles.metricTitle}>{metric.title}</p>
+                <h3 className={styles.metricValue}>{metric.value}</h3>
+                <p className={styles.metricChange}>{metric.change}</p>
               </div>
-              <div className="p-2 rounded-md bg-gray-700">
+              <div className={styles.metricIcon}>
                 {metric.icon}
               </div>
             </div>
@@ -281,68 +274,68 @@ export default function Dashboard() {
       </div>
       
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={styles.contentGrid}>
         {/* Recent Submissions */}
-        <div className="lg:col-span-2 bg-gray-800 rounded-lg shadow-lg">
-          <div className="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
-            <h2 className="font-semibold text-lg">Recent Submissions</h2>
-            <Link href="/assignments" className="text-sm text-indigo-400 hover:text-indigo-300">View All</Link>
+        <div className={styles.submissionsPanel}>
+          <div className={styles.panelHeader}>
+            <h2 className={styles.panelTitle}>Recent Submissions</h2>
+            <Link href="/assignments" className={styles.viewAllLink}>View All</Link>
           </div>
           
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
-              <span className="ml-3">Loading assignments...</span>
+            <div className={styles.loadingContainer}>
+              <div className={styles.loadingSpinner}></div>
+              <span className={styles.loadingText}>Loading assignments...</span>
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center py-12 text-red-400">
-              <AlertCircle className="mr-2" size={24} />
+            <div className={styles.errorContainer}>
+              <AlertCircle className={styles.errorIcon} size={24} />
               <span>{error}</span>
             </div>
           ) : assignments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <FileText className="mb-4 opacity-50" size={48} />
-              <h3 className="text-xl font-medium mb-2">No assignments yet</h3>
-              <p className="text-gray-500 mb-6 text-center max-w-md">
+            <div className={styles.emptyContainer}>
+              <FileText className={styles.emptyIcon} size={48} />
+              <h3 className={styles.emptyTitle}>No assignments yet</h3>
+              <p className={styles.emptyDescription}>
                 Upload your first assignment to get started.
               </p>
               <Link 
                 href="/grade" 
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-white flex items-center"
+                className={styles.uploadCta}
               >
                 <Upload className="mr-2" size={18} />
                 Upload Assignment
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-700/50 text-left">
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead className={styles.tableHead}>
                   <tr>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-3/6">Assignment</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-1/6 min-w-[120px]">Status</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-1/6">Time</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-1/6 text-right">Actions</th>
+                    <th className={`${styles.tableHeadCell} w-3/6`}>Assignment</th>
+                    <th className={`${styles.tableHeadCell} w-1/6 min-w-[120px]`}>Status</th>
+                    <th className={`${styles.tableHeadCell} w-1/6`}>Time</th>
+                    <th className={`${styles.tableHeadCell} w-1/6 text-right`}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700">
+                <tbody className={styles.tableBody}>
                   {assignments.map((assignment) => (
-                    <tr key={assignment.key} className="hover:bg-gray-700/50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center">
-                          <FileText className="text-indigo-400 mr-2 flex-shrink-0" size={16} />
+                    <tr key={assignment.key} className={styles.tableRow}>
+                      <td className={styles.tableCell}>
+                        <div className={styles.fileName}>
+                          <FileText className={styles.fileIcon} size={16} />
                           <span className="truncate">{assignment.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 text-xs rounded-full inline-flex items-center ${
+                      <td className={styles.statusCell}>
+                        <span className={`${styles.statusBadge} ${
                           assignment.graded 
-                            ? 'bg-green-900/30 text-green-400' 
-                            : 'bg-yellow-900/30 text-yellow-400'
+                            ? styles.statusGraded
+                            : styles.statusPending
                         }`}>
                           {assignment.graded ? (
                             <>
-                              <Award size={12} className="mr-1 flex-shrink-0" />
+                              <Award size={12} className={styles.statusIcon} style={{color: '#000000'}} />
                               <span>Graded</span>
                             </>
                           ) : (
@@ -350,13 +343,13 @@ export default function Dashboard() {
                           )}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                      <td className={styles.timeCell}>
                         {getTimeAgo(assignment.lastModified)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
+                      <td className={styles.actionCell}>
                         <Link 
                           href={`/grade?fileKey=${encodeURIComponent(assignment.key)}`}
-                          className="text-green-400 hover:text-green-300"
+                          className={styles.actionLink}
                         >
                           {assignment.graded ? 'View Grade' : 'Grade'}
                         </Link>
@@ -370,24 +363,24 @@ export default function Dashboard() {
         </div>
         
         {/* Grading Queue */}
-        <div className="bg-gray-800 rounded-lg shadow-lg">
-          <div className="px-6 py-4 border-b border-gray-700">
-            <h2 className="font-semibold text-lg">Grading Queue</h2>
+        <div className={styles.queuePanel}>
+          <div className={styles.panelHeader}>
+            <h2 className={styles.panelTitle}>Grading Queue</h2>
           </div>
-          <div className="p-4 space-y-3">
+          <div className={styles.queueList}>
             {assignments.filter(a => !a.graded).slice(0, 3).map((item) => (
-              <div key={item.key} className="p-4 rounded-lg bg-gray-700 hover:bg-gray-700/80">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium">{item.name}</h3>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-900/30 text-yellow-400">
+              <div key={item.key} className={styles.queueItem}>
+                <div className={styles.queueItemHeader}>
+                  <h3 className={styles.queueItemTitle}>{item.name}</h3>
+                  <span className={styles.queueItemStatus}>
                     Pending
                   </span>
                 </div>
-                <p className="text-sm text-gray-400">Uploaded {getTimeAgo(item.lastModified)}</p>
-                <div className="mt-3">
+                <p className={styles.queueItemTime}>Uploaded {getTimeAgo(item.lastModified)}</p>
+                <div className={styles.queueItemAction}>
                   <Link 
                     href={`/grade?fileKey=${encodeURIComponent(item.key)}`}
-                    className="w-full text-center block bg-indigo-600 hover:bg-indigo-700 text-white rounded px-4 py-2 text-sm"
+                    className={styles.queueItemLink}
                   >
                     Grade Now
                   </Link>
@@ -395,10 +388,10 @@ export default function Dashboard() {
               </div>
             ))}
             {assignments.filter(a => !a.graded).length === 0 && (
-              <div className="text-center py-8 text-gray-400">
-                <Clock className="mx-auto mb-3 opacity-50" size={32} />
+              <div className={styles.emptyQueueContainer}>
+                <Clock className={styles.emptyQueueIcon} size={32} />
                 <p>No pending assignments</p>
-                <p className="text-sm text-gray-500 mt-1">All caught up!</p>
+                <p className={styles.emptyQueueText}>All caught up!</p>
               </div>
             )}
           </div>

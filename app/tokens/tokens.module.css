@@ -1,0 +1,194 @@
+/* Token theme container */
+.container {
+  /* This acts as a global container for applying theme variables */
+  font-family: var(--font-oswald), 'Oswald', sans-serif;
+}
+
+.container.lightTheme {
+  /* Light mode (default) */
+  --bg-gradient: radial-gradient(
+    circle at 60% 40%,
+    #e0e7ff 0%, /* light blue */
+    #f3e8ff 40%, /* light purple */
+    #fce7f3 70%, /* light pink */
+    #b9def9 100% /* very light blue for the edges */
+  );
+  --card-bg: white;
+  --card-border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-accent: #4f46e5;
+  --stat-box-bg: #000000;
+  --stat-box-text: #ffffff;
+  --stat-box-label: #9ca3af;
+}
+
+.container.darkTheme {
+  --bg-gradient: linear-gradient(to right, #0f172a, #1e293b);
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-accent: #818cf8;
+  --stat-box-bg: rgba(55, 65, 81, 0.5);
+  --stat-box-text: #818cf8;
+  --stat-box-label: #9ca3af;
+}
+
+/* Token balance card */
+.tokenBalanceCard {
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+}
+
+/* Background styles for token balance card based on theme */
+.container.lightTheme .tokenBalanceCard {
+  background: white;
+}
+
+.container.darkTheme .tokenBalanceCard {
+  background-color: #1e293c;
+}
+
+.gradientBackground {
+  background-image: var(--bg-gradient);
+}
+
+/* Stat boxes */
+.statBox {
+  background: var(--stat-box-bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.statValue {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--stat-box-text);
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: var(--stat-box-label);
+  margin-bottom: 0.25rem;
+}
+
+/* Purchase options section */
+.purchaseCard {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  color: var(--text-primary);
+}
+
+/* Info section */
+.infoCard {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  color: var(--text-primary);
+}
+
+/* Info card text styling by theme */
+.container.lightTheme .infoCard h2 {
+  color: black;
+}
+
+.container.lightTheme .infoCard p {
+  color: black;
+}
+
+.container.lightTheme .infoCard .mt-6 p {
+  color: #333333;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+  font-family: var(--font-oswald), 'Oswald', sans-serif;
+}
+
+.iconAccent {
+  margin-right: 0.5rem;
+  color: var(--text-accent);
+}
+
+/* Token balance section title - different colors based on theme */
+.container.lightTheme .tokenBalanceCard .sectionTitle {
+  color: var(--text-primary);
+}
+
+.container.darkTheme .tokenBalanceCard .sectionTitle {
+  color: white;
+}
+
+/* Token balance value styles */
+.tokenBalanceDisplay {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-oswald), 'Oswald', sans-serif;
+}
+
+/* Different styles for token display based on theme */
+.container.lightTheme .tokenBalanceDisplay {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.container.darkTheme .tokenBalanceDisplay {
+  background-color: #1e293c
+}
+
+.tokenAmount {
+  font-size: 3rem;
+  font-weight: 800;
+  font-family: var(--font-oswald), 'Oswald', sans-serif;
+}
+
+/* Different text colors for token amount based on theme */
+.container.lightTheme .tokenAmount {
+  color: black;
+}
+
+.container.darkTheme .tokenAmount {
+  color: white;
+}
+
+.tokenLabel {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-oswald), 'Oswald', sans-serif;
+}
+
+/* Different text colors for token labels based on theme */
+.container.lightTheme .tokenLabel {
+  color: #4b5563;
+}
+
+.container.darkTheme .tokenLabel {
+  color: #9ca3af;
+}
+
+.tokenDescription {
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  font-family: var(--font-oswald), 'Oswald', sans-serif;
+}
+
+/* Different text colors for token description based on theme */
+.container.lightTheme .tokenDescription {
+  color: #6b7280;
+}
+
+.container.darkTheme .tokenDescription {
+  color: #9ca3af;
+} 

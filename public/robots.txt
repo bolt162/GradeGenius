@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /analytics/
+Disallow: /grade/
+Disallow: /assignments/
+Disallow: /rubrics/
+Disallow: /login?redirect=*
+Disallow: /user/
+Disallow: /*?token=
+
+# Fix domain to match sitemap URLs
+Sitemap: https://gradegenius.io/sitemap.xml

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { 
   BarChart3, 
@@ -31,6 +32,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import TokenDisplay from './TokenDisplay';
+import ThemeToggle from './ThemeToggle';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -44,6 +46,32 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState<string>('dark');
+
+  // Use useEffect to mark component as mounted on client-side and track theme
+  useEffect(() => {
+    setIsMounted(true);
+    // Check initial theme
+    if (typeof window !== 'undefined') {
+      const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+      setCurrentTheme(theme);
+      
+      // Create observer to watch for theme changes
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === 'data-theme') {
+            const newTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            setCurrentTheme(newTheme);
+          }
+        });
+      });
+      
+      observer.observe(document.documentElement, { attributes: true });
+      
+      return () => observer.disconnect();
+    }
+  }, []);
 
   // Check authentication on load
   useEffect(() => {
@@ -110,21 +138,28 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Top Navigation Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 shadow-sm h-16 flex items-center px-4">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--header-bg)] shadow-sm h-16 flex items-center px-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center">
             <button 
               onClick={toggleSidebar} 
-              className="p-2 rounded-md hover:bg-gray-700 mr-2"
+              className="p-2 rounded-md hover:bg-[var(--bg-tertiary)] mr-2"
             >
               <Menu size={24} />
             </button>
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
-                <span className="text-indigo-600 text-xl font-bold mr-1">Grade</span>
-                <span className="text-xl font-bold">Genius</span>
+                {/* Logo based on theme state */}
+                <Image 
+                  src={`/images/grade-genius${currentTheme === 'dark' ? '-white' : ''}.png`}
+                  alt="GradeGenius Logo" 
+                  width={180} 
+                  height={80} 
+                  priority
+                  className="h-12 w-auto"
+                />
               </Link>
             </div>
           </div>
@@ -135,7 +170,10 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
               <TokenDisplay />
             </div>
             
-            <button className="p-2 rounded-full hover:bg-gray-700">
+            {/* Theme Toggle - Now showing on all pages */}
+            {isMounted && <ThemeToggle />}
+            
+            <button className="p-2 rounded-full hover:bg-[var(--bg-tertiary)]">
               <Bell size={20} />
             </button>
             
@@ -152,21 +190,21 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
               </button>
               
               {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5">
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[var(--card-bg)] ring-1 ring-black ring-opacity-5">
                   <div className="py-1">
-                    <Link href="/profile" className="block px-4 py-2 text-sm hover:bg-gray-700">
+                    <Link href="/profile" className="block px-4 py-2 text-sm hover:bg-[var(--bg-tertiary)]">
                       Your Profile
                     </Link>
-                    <Link href="/settings" className="block px-4 py-2 text-sm hover:bg-gray-700">
+                    <Link href="/settings" className="block px-4 py-2 text-sm hover:bg-[var(--bg-tertiary)]">
                       Settings
                     </Link>
-                    <Link href="/tokens" className="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center">
+                    <Link href="/tokens" className="block px-4 py-2 text-sm hover:bg-[var(--bg-tertiary)] flex items-center">
                       <Coins size={16} className="mr-2" />
                       Buy Tokens
                     </Link>
                     <button 
                       onClick={handleSignOut}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-700"
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-tertiary)]"
                     >
                       Sign out
                     </button>
@@ -179,73 +217,73 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
       </header>
       
       {/* Sidebar */}
-      <div className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 -translate-x-full md:w-20 md:translate-x-0'} bg-gray-800 shadow-md`}>
+      <div className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 -translate-x-full md:w-20 md:translate-x-0'} bg-[var(--sidebar-bg)] shadow-md`}>
         <nav className="h-full py-4 flex flex-col">
           <div className="px-4 space-y-1">
             <Link
               href="/dashboard"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'dashboard' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'dashboard' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}
             >
               <LayoutDashboard size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Dashboard</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Dashboard</span>
             </Link>
             
             <Link
               href="/assignments"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'assignments' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'assignments' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}
             >
               <FileText size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Assignments</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Assignments</span>
             </Link>
             
             <Link
               href="/analytics"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'analytics' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'analytics' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}
             >
               <BarChart3 size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Analytics</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Analytics</span>
             </Link>
             
             <Link
               href="/rubrics"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'rubrics' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'rubrics' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}
             >
               <ClipboardList size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Rubrics</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Rubrics</span>
             </Link>
             
             <Link
               href="/tokens"
-              className="flex items-center py-3 px-3 rounded-md hover:bg-gray-700"
+              className="flex items-center py-3 px-3 rounded-md hover:bg-[var(--bg-tertiary)]"
             >
               <Coins size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Tokens</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Tokens</span>
             </Link>
             
             <Link
               href="/settings"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'settings' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'settings' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}
             >
               <Settings size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Settings</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Settings</span>
             </Link>
           </div>
           
           <div className="mt-auto px-4">
             <Link
               href="/help"
-              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'help' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'}`}
+              className={`flex items-center py-3 px-3 rounded-md ${activePage === 'help' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}
             >
               <HelpCircle size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Help & Support</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Help & Support</span>
             </Link>
             
             <button
               onClick={handleSignOut}
-              className="flex items-center w-full text-left py-3 px-3 rounded-md hover:bg-gray-700"
+              className="flex items-center w-full text-left py-3 px-3 rounded-md hover:bg-[var(--bg-tertiary)]"
             >
               <LogOut size={20} />
-              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'}`}>Logout</span>
+              <span className={`ml-3 ${isSidebarOpen ? 'block' : 'hidden'} font-[var(--font-oswald)] text-[var(--sidebar-text)]`}>Logout</span>
             </button>
           </div>
         </nav>
@@ -262,16 +300,16 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
       </main>
       
       {/* Footer */}
-      <footer className={`py-4 px-6 bg-gray-800 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="text-sm mb-2 md:mb-0">
-            &copy; {new Date().getFullYear()} GradeGenius. All rights reserved.
-          </div>
-          <div className="flex space-x-4">
-            <Link href="/privacy" className="text-sm hover:underline">Privacy Policy</Link>
-            <Link href="/terms" className="text-sm hover:underline">Terms of Service</Link>
-            <Link href="/#contact" className="text-sm hover:underline">Contact</Link>
-          </div>
+      <footer className={`py-4 px-6 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} bg-[var(--footer-bg)]`}>
+                  <div className="max-w-7xl mx-auto flex md:flex-row justify-between items-center font-[var(--font-oswald)] text-[var(--footer-text)]">
+            <div className="text-sm mb-2 md:mb-0">
+              &copy; {new Date().getFullYear()} GradeGenius. All rights reserved.
+            </div>
+            <div className="flex space-x-4">
+              <Link href="/privacy" className="text-sm hover:underline">Privacy Policy</Link>
+              <Link href="/terms" className="text-sm hover:underline">Terms of Service</Link>
+              <Link href="/#contact" className="text-sm hover:underline">Contact</Link>
+            </div>
         </div>
       </footer>
     </div>

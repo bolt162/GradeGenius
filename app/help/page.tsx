@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Mail, Send, CheckCircle } from 'lucide-react';
 import Layout from '../components/Layout';
+import { useTheme } from '../context/ThemeContext';
 
 export default function HelpPage() {
   const { user } = useUser();
+  const { theme } = useTheme();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -73,6 +75,7 @@ export default function HelpPage() {
         });
       }
     } catch (error) {
+      console.error('Contact form submission error:', error);
       setSubmitResult({
         success: false,
         message: 'There was a problem connecting to the server. Please try again later.'
@@ -85,12 +88,26 @@ export default function HelpPage() {
   return (
     <Layout activePage="help">
       {/* Page Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-500 rounded-lg overflow-hidden shadow-lg mb-6">
+      <div className={`${
+        theme === 'dark' 
+          ? 'bg-gradient-to-r from-indigo-600 to-blue-500' 
+          : ''
+        } rounded-lg overflow-hidden shadow-lg mb-6`}
+        style={theme === 'dark' ? {} : {
+          backgroundImage: `radial-gradient(
+            circle at 60% 40%,
+            #e0e7ff 0%,
+            #f3e8ff 40%, 
+            #fce7f3 70%,
+            #b9def9 100%
+          )`
+        }}
+      >
         <div className="px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-white">Help & Support</h2>
-              <p className="text-indigo-100">We're here to help you with GradeGenius</p>
+              <h2 className={`text-xl font-semibold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Help & Support</h2>
+              <p className={`font-oswald ${theme === 'dark' ? 'text-indigo-100' : 'text-gray-600'}`}>We&apos;re here to help you with GradeGenius</p>
             </div>
           </div>
         </div>
@@ -99,28 +116,28 @@ export default function HelpPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* FAQ Section */}
         <div className="lg:col-span-1">
-          <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-4">Frequently Asked Questions</h3>
+          <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
+            <h3 className={`text-xl font-semibold mb-4 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Frequently Asked Questions</h3>
             
             <div className="space-y-4">
-              <div className="border-b border-gray-700 pb-4">
-                <h4 className="font-medium mb-2">How do tokens work?</h4>
-                <p className="text-gray-400">Tokens are used to grade assignments. Each grading consumes tokens based on the length and complexity of the work.</p>
+              <div className={`border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} pb-4`}>
+                <h4 className={`font-medium mb-2 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>How do tokens work?</h4>
+                <p className={`font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Tokens are used to grade assignments. Each grading consumes tokens based on the length and complexity of the work.</p>
               </div>
               
-              <div className="border-b border-gray-700 pb-4">
-                <h4 className="font-medium mb-2">How accurate is the grading?</h4>
-                <p className="text-gray-400">GradeGenius uses advanced AI to provide accurate feedback, but we recommend reviewing the results for best outcomes.</p>
+              <div className={`border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} pb-4`}>
+                <h4 className={`font-medium mb-2 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>How accurate is the grading?</h4>
+                <p className={`font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>GradeGenius uses advanced AI to provide accurate feedback, but we recommend reviewing the results for best outcomes.</p>
               </div>
               
-              <div className="border-b border-gray-700 pb-4">
-                <h4 className="font-medium mb-2">What file formats are supported?</h4>
-                <p className="text-gray-400">We support PDF, DOCX, TXT, and direct text input for grading assignments.</p>
+              <div className={`border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} pb-4`}>
+                <h4 className={`font-medium mb-2 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>What file formats are supported?</h4>
+                <p className={`font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>We support PDF, DOCX, TXT, and direct text input for grading assignments.</p>
               </div>
               
               <div className="pb-4">
-                <h4 className="font-medium mb-2">How do I get more tokens?</h4>
-                <p className="text-gray-400">You can purchase additional tokens from your dashboard or the tokens page.</p>
+                <h4 className={`font-medium mb-2 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>How do I get more tokens?</h4>
+                <p className={`font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>You can purchase additional tokens from your dashboard or the tokens page.</p>
               </div>
             </div>
           </div>
@@ -128,14 +145,16 @@ export default function HelpPage() {
 
         {/* Contact Form */}
         <div className="lg:col-span-2">
-          <div className="bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
             <div className="flex items-center mb-6">
-              <Mail className="text-indigo-400 mr-3" size={24} />
-              <h3 className="text-xl font-semibold">Contact Support</h3>
+              <Mail className={`${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mr-3`} size={24} />
+              <h3 className={`text-xl font-semibold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Contact Support</h3>
             </div>
 
             {submitResult && (
-              <div className={`p-4 mb-6 rounded-md ${submitResult.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+              <div className={`p-4 mb-6 rounded-md ${submitResult.success 
+                ? theme === 'dark' ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-800' 
+                : theme === 'dark' ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-800'}`}>
                 {submitResult.success && <CheckCircle className="inline-block mr-2" size={16} />}
                 {submitResult.message}
               </div>
@@ -144,40 +163,46 @@ export default function HelpPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="name" className="block mb-1 text-sm font-medium">Your Name</label>
+                  <label htmlFor="name" className={`block mb-1 text-sm font-medium font-oswald ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Your Name</label>
                   <input
                     type="text"
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                    className={`w-full px-3 py-2 ${theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-gray-50 border-gray-300 text-gray-900'} border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-oswald`}
                     required
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="email" className="block mb-1 text-sm font-medium">Your Email</label>
+                  <label htmlFor="email" className={`block mb-1 text-sm font-medium font-oswald ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Your Email</label>
                   <input
                     type="email"
                     id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                    className={`w-full px-3 py-2 ${theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-gray-50 border-gray-300 text-gray-900'} border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-oswald`}
                     required
                   />
                 </div>
               </div>
               
               <div>
-                <label htmlFor="subject" className="block mb-1 text-sm font-medium">Subject</label>
+                <label htmlFor="subject" className={`block mb-1 text-sm font-medium font-oswald ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Subject</label>
                 <select
                   id="subject"
                   name="subject"
                   value={formData.subject}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  className={`w-full px-3 py-2 ${theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-gray-50 border-gray-300 text-gray-900'} border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-oswald`}
                   required
                 >
                   <option value="">Select a topic</option>
@@ -190,14 +215,16 @@ export default function HelpPage() {
               </div>
               
               <div>
-                <label htmlFor="message" className="block mb-1 text-sm font-medium">Your Message</label>
+                <label htmlFor="message" className={`block mb-1 text-sm font-medium font-oswald ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Your Message</label>
                 <textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleInputChange}
                   rows={6}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  className={`w-full px-3 py-2 ${theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-gray-50 border-gray-300 text-gray-900'} border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-oswald`}
                   required
                 ></textarea>
               </div>
@@ -205,7 +232,9 @@ export default function HelpPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center justify-center w-full md:w-auto px-6 py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors rounded-md font-medium disabled:opacity-70"
+                className={`flex items-center justify-center w-full md:w-auto px-6 py-2 ${theme === 'dark' 
+                  ? 'bg-indigo-600 hover:bg-indigo-700' 
+                  : 'bg-black hover:bg-gray-800'} transition-colors rounded-md font-medium disabled:opacity-70 text-white font-oswald`}
               >
                 {isSubmitting ? (
                   'Sending...'

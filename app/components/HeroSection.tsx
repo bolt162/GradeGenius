@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import styles from './HeroSection.module.css';
+import Image from 'next/image';
 
 const HeroSection = () => {
   return (
@@ -26,10 +27,13 @@ const HeroSection = () => {
             </div>
           </div>
           <div className={styles.rightCol}>
-            <img 
+            <Image 
               src="/images/hero-dashboard.png" 
               alt="AI Grading Assistant Dashboard - Automated Essay Grading Platform" 
               title="GradeGenius AI Grading Platform Interface"
+              width={800}
+              height={600}
+              priority
             />
           </div>
         </div>

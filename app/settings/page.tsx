@@ -9,19 +9,19 @@ import {
   LogOut, 
   ChevronRight, 
   User, 
-  Shield, 
-  Bell, 
   Save,
   CheckCircle,
   AlertCircle,
   Coins
 } from 'lucide-react';
 import Layout from '../components/Layout';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SettingsPage() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+  const { theme } = useTheme();
   
   const [activeTab, setActiveTab] = useState<'password' | 'billing' | 'account'>('account');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -142,55 +142,65 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="md:col-span-1">
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg overflow-hidden shadow-lg`}>
               <div className="p-4">
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
+                  <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium font-oswald">
                     {user?.firstName?.charAt(0) || user?.lastName?.charAt(0) || 'U'}
                   </div>
                   <div>
-                    <div className="font-medium">{user?.firstName} {user?.lastName}</div>
-                    <div className="text-sm text-gray-400">{user?.primaryEmailAddress?.emailAddress}</div>
+                    <div className={`font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{user?.firstName} {user?.lastName}</div>
+                    <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} font-oswald`}>{user?.primaryEmailAddress?.emailAddress}</div>
                   </div>
                 </div>
                 
                 <nav className="space-y-1">
                   <button 
                     onClick={() => setActiveTab('account')}
-                    className={`w-full flex items-center justify-between p-3 rounded-md ${activeTab === 'account' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+                    className={`w-full flex items-center justify-between p-3 rounded-md font-oswald 
+                      ${activeTab === 'account' 
+                        ? theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100' 
+                        : theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                   >
                     <div className="flex items-center">
-                      <User className="mr-3 h-5 w-5 text-indigo-400" />
-                      <span>Account</span>
+                      <User className={`mr-3 h-5 w-5 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-500'}`} />
+                      <span className={theme === 'dark' ? 'text-white' : 'text-gray-800'}>Account</span>
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                   
                   <button 
                     onClick={() => setActiveTab('password')}
-                    className={`w-full flex items-center justify-between p-3 rounded-md ${activeTab === 'password' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+                    className={`w-full flex items-center justify-between p-3 rounded-md font-oswald
+                      ${activeTab === 'password' 
+                        ? theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100' 
+                        : theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                   >
                     <div className="flex items-center">
-                      <Key className="mr-3 h-5 w-5 text-indigo-400" />
-                      <span>Change Password</span>
+                      <Key className={`mr-3 h-5 w-5 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-500'}`} />
+                      <span className={theme === 'dark' ? 'text-white' : 'text-gray-800'}>Change Password</span>
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                   
                   <button 
                     onClick={() => setActiveTab('billing')}
-                    className={`w-full flex items-center justify-between p-3 rounded-md ${activeTab === 'billing' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+                    className={`w-full flex items-center justify-between p-3 rounded-md font-oswald
+                      ${activeTab === 'billing' 
+                        ? theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100' 
+                        : theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                   >
                     <div className="flex items-center">
-                      <CreditCard className="mr-3 h-5 w-5 text-indigo-400" />
-                      <span>Billing</span>
+                      <CreditCard className={`mr-3 h-5 w-5 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-500'}`} />
+                      <span className={theme === 'dark' ? 'text-white' : 'text-gray-800'}>Billing</span>
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                   
                   <button 
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-between p-3 rounded-md hover:bg-gray-700 text-red-400 hover:text-red-300"
+                    className={`w-full flex items-center justify-between p-3 rounded-md font-oswald
+                      ${theme === 'dark' ? 'hover:bg-gray-700 text-red-400 hover:text-red-300' : 'hover:bg-gray-100 text-red-500 hover:text-red-600'}`}
                   >
                     <div className="flex items-center">
                       <LogOut className="mr-3 h-5 w-5" />
@@ -204,41 +214,47 @@ export default function SettingsPage() {
           
           {/* Content */}
           <div className="md:col-span-3">
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 shadow-lg`}>
               {/* Account Settings */}
               {activeTab === 'account' && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-6">Account Settings</h2>
+                  <h2 className={`text-xl font-semibold mb-6 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Account Settings</h2>
                   
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
+                      <label className={`block text-sm font-medium mb-1 font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}>Name</label>
                       <div className="flex space-x-4">
                         <input 
                           type="text" 
                           value={user?.firstName || ''} 
                           disabled
-                          className="bg-gray-700 text-white rounded-md p-2 w-full"
+                          className={`${theme === 'dark' 
+                            ? 'bg-gray-700 text-white' 
+                            : 'bg-gray-100 text-gray-800'} rounded-md p-2 w-full font-oswald`}
                         />
                         <input 
                           type="text" 
                           value={user?.lastName || ''} 
                           disabled
-                          className="bg-gray-700 text-white rounded-md p-2 w-full"
+                          className={`${theme === 'dark' 
+                            ? 'bg-gray-700 text-white' 
+                            : 'bg-gray-100 text-gray-800'} rounded-md p-2 w-full font-oswald`}
                         />
                       </div>
-                      <p className="mt-1 text-sm text-gray-400">To change your name, please visit your Clerk profile.</p>
+                      <p className={`mt-1 text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>To change your name, please visit your Clerk profile.</p>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                      <label className={`block text-sm font-medium mb-1 font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}>Email</label>
                       <input 
                         type="email" 
                         value={user?.primaryEmailAddress?.emailAddress || ''} 
                         disabled
-                        className="bg-gray-700 text-white rounded-md p-2 w-full"
+                        className={`${theme === 'dark' 
+                          ? 'bg-gray-700 text-white' 
+                          : 'bg-gray-100 text-gray-800'} rounded-md p-2 w-full font-oswald`}
                       />
-                      <p className="mt-1 text-sm text-gray-400">To change your email, please visit your Clerk profile.</p>
+                      <p className={`mt-1 text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>To change your email, please visit your Clerk profile.</p>
                     </div>
                     
                     <div className="pt-4">
@@ -246,7 +262,7 @@ export default function SettingsPage() {
                         href="https://accounts.clerk.dev/account" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 font-oswald"
                       >
                         Manage Account at Clerk
                       </a>
@@ -281,7 +297,8 @@ export default function SettingsPage() {
                         type="password" 
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="bg-gray-700 text-white rounded-md p-2 w-full"
+                        className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'text-gray-800'} rounded-md p-2 w-full font-oswald`}
+                        style={theme === 'dark' ? {} : { backgroundColor: 'oklch(96.7% 0.003 264.542)' }}
                         required
                       />
                     </div>
@@ -295,7 +312,8 @@ export default function SettingsPage() {
                           setNewPassword(e.target.value);
                           updatePasswordRequirements(e.target.value);
                         }}
-                        className="bg-gray-700 text-white rounded-md p-2 w-full"
+                        className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'text-gray-800'} rounded-md p-2 w-full font-oswald`}
+                        style={theme === 'dark' ? {} : { backgroundColor: 'oklch(96.7% 0.003 264.542)' }}
                         required
                       />
                       
@@ -326,7 +344,8 @@ export default function SettingsPage() {
                         type="password" 
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="bg-gray-700 text-white rounded-md p-2 w-full"
+                        className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'text-gray-800'} rounded-md p-2 w-full font-oswald`}
+                        style={theme === 'dark' ? {} : { backgroundColor: 'oklch(96.7% 0.003 264.542)' }}
                         required
                       />
                       
@@ -363,40 +382,40 @@ export default function SettingsPage() {
                   <h2 className="text-xl font-semibold mb-6">Billing & Subscription</h2>
                   
                   <div className="mb-8">
-                    <div className="bg-gray-700 rounded-lg p-4 mb-4">
+                    <div className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-lg p-4 mb-4 shadow-sm`}>
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium">Current Plan</h3>
+                        <h3 className={`font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Current Plan</h3>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Active
                         </span>
                       </div>
                       <div className="mb-2">
-                        <span className="text-2xl font-bold">Freemium</span>
-                        <span className="text-gray-400 ml-2">- 20,000 tokens</span>
+                        <span className={`text-2xl font-bold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Freemium</span>
+                        <span className={`ml-2 font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>- 20,000 tokens</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-2 mb-4">
                       <Coins className="h-5 w-5 text-yellow-400" />
                       {isLoadingTokens ? (
-                        <span className="font-medium">Loading token balance...</span>
+                        <span className={`font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Loading token balance...</span>
                       ) : (
-                        <span className="font-medium">Token Balance: {tokenBalance !== null ? tokenBalance.toLocaleString() : 'Unknown'}</span>
+                        <span className={`font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Token Balance: {tokenBalance !== null ? tokenBalance.toLocaleString() : 'Unknown'}</span>
                       )}
                     </div>
                     
                     <div>
-                      <h3 className="font-medium mb-3">Available Plans</h3>
+                      <h3 className={`font-medium mb-3 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Available Plans</h3>
                       <div className="space-y-4">
-                        <div className="border border-gray-700 rounded-lg p-4">
+                        <div className={`border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} rounded-lg p-4 ${theme === 'dark' ? '' : 'bg-white'}`}>
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h4 className="font-medium">Standard Plan</h4>
-                              <p className="text-sm text-gray-400">50,000 tokens per month</p>
+                              <h4 className={`font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Standard Plan</h4>
+                              <p className={`text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>50,000 tokens per month</p>
                             </div>
                             <div className="text-right">
-                              <span className="text-lg font-bold">$9.99</span>
-                              <span className="text-sm text-gray-400">/month</span>
+                              <span className={`text-lg font-bold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>$9.99</span>
+                              <span className={`text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>/month</span>
                             </div>
                           </div>
                           <button 
@@ -407,14 +426,14 @@ export default function SettingsPage() {
                           </button>
                         </div>
                         
-                        <div className="border border-gray-700 rounded-lg p-4">
+                        <div className={`border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} rounded-lg p-4 ${theme === 'dark' ? '' : 'bg-white'}`}>
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h4 className="font-medium">Enterprise Plan</h4>
-                              <p className="text-sm text-gray-400">Unlimited tokens & priority support</p>
+                              <h4 className={`font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Enterprise Plan</h4>
+                              <p className={`text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Unlimited tokens & priority support</p>
                             </div>
                             <div className="text-right">
-                              <span className="text-lg font-bold">Custom</span>
+                              <span className={`text-lg font-bold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Custom</span>
                             </div>
                           </div>
                           <button 
@@ -429,12 +448,12 @@ export default function SettingsPage() {
                   </div>
                   
                   <div>
-                    <h3 className="font-medium mb-3">Payment Methods</h3>
-                    <div className="bg-gray-700 rounded-lg p-4 mb-4 flex items-center justify-between">
-                      <div className="text-gray-400">No payment methods added yet</div>
+                    <h3 className={`font-medium mb-3 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Payment Methods</h3>
+                    <div className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-lg p-4 mb-4 flex items-center justify-between shadow-sm`}>
+                      <div className={`font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>No payment methods added yet</div>
                       <button 
                         disabled
-                        className="inline-flex items-center justify-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 cursor-not-allowed"
+                        className={`inline-flex items-center justify-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-400'} cursor-not-allowed font-oswald`}
                       >
                         Coming Soon
                       </button>
@@ -442,8 +461,8 @@ export default function SettingsPage() {
                   </div>
                   
                   <div>
-                    <h3 className="font-medium mb-3">Billing History</h3>
-                    <div className="bg-gray-700 rounded-lg p-4 text-center text-gray-400">
+                    <h3 className={`font-medium mb-3 font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Billing History</h3>
+                    <div className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-lg p-4 text-center shadow-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                       No billing history available
                     </div>
                   </div>

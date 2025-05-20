@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { FileText, Upload, AlertCircle, CheckCircle, Award, Eye, Trash2 } from 'lucide-react';
+import { FileText, Upload, AlertCircle, CheckCircle, Award, Trash2, Clock } from 'lucide-react';
 import Layout from '../components/Layout';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import styles from './assignments.module.css';
 
 interface Assignment {
   key: string;
@@ -73,7 +74,7 @@ export default function AssignmentsPage() {
         
         // Map of fileKey to grade info
         const gradeMap = new Map();
-        grades.forEach((grade: any) => {
+        grades.forEach((grade: {fileKey: string; timestamp: string; key: string}) => {
           gradeMap.set(grade.fileKey, {
             timestamp: grade.timestamp,
             key: grade.key
@@ -502,8 +503,8 @@ export default function AssignmentsPage() {
   return (
     <Layout activePage="assignments">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">My Assignments</h1>
-        <p className="text-gray-400">View, upload, and grade your assignments</p>
+        <h1 className={`${styles.pageTitle} text-2xl font-bold`}>My Assignments</h1>
+        <p className={`${styles.pageSubtitle} text-gray-400`}>View, upload, and grade your assignments</p>
       </div>
       
       <div className="mb-6 flex justify-between items-center">
@@ -525,7 +526,7 @@ export default function AssignmentsPage() {
           />
           <label 
             htmlFor="file-upload" 
-            className={`inline-flex items-center px-4 py-2 rounded-md cursor-pointer ${
+            className={`inline-flex items-center px-4 py-2 rounded-md cursor-pointer ${styles.uploadButton} ${
               isUploadDisabled 
                 ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
                 : 'bg-indigo-600 hover:bg-indigo-700 text-white'
@@ -556,9 +557,9 @@ export default function AssignmentsPage() {
       )}
       
       {/* List of assignments */}
-      <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div className={`${styles.tableContainer} bg-gray-800 rounded-lg shadow-lg overflow-hidden`}>
         {isLoading ? (
-          <div className="flex items-center justify-center p-8">
+          <div className={`${styles.loadingContainer} flex items-center justify-center p-8`}>
             <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
             <span className="ml-3">Loading assignments...</span>
           </div>
@@ -576,7 +577,7 @@ export default function AssignmentsPage() {
             </p>
             <label 
               htmlFor="file-upload" 
-              className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md cursor-pointer text-white"
+              className={`${styles.uploadButton} inline-flex items-center px-4 py-2 rounded-md cursor-pointer`}
             >
               <Upload size={20} className="mr-2" />
               Upload Assignment
@@ -585,39 +586,40 @@ export default function AssignmentsPage() {
         ) : (
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-700">
+              <table className={`${styles.table} w-full`}>
+                <thead className={`${styles.tableHead} bg-gray-700`}>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Size</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Uploaded</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                    <th className={`${styles.tableHeadCell} px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}>Name</th>
+                    <th className={`${styles.tableHeadCell} px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}>Size</th>
+                    <th className={`${styles.tableHeadCell} px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}>Uploaded</th>
+                    <th className={`${styles.tableHeadCell} px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}>Status</th>
+                    <th className={`${styles.tableHeadCell} px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700">
+                <tbody className={`${styles.tableBody} divide-y divide-gray-700`}>
                   {assignments.map((assignment) => (
-                    <tr key={assignment.key} className="hover:bg-gray-700/50">
+                    <tr key={assignment.key} className={styles.tableRow}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <FileText size={20} className="text-indigo-400 mr-3" />
-                          <span className="font-medium">{assignment.name}</span>
+                          <span className={`${styles.columnText} font-medium`}>{assignment.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${styles.columnText} text-gray-300`}>
                         {formatFileSize(assignment.size)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${styles.columnText} text-gray-300`}>
                         {formatDate(assignment.lastModified)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {assignment.graded ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-400">
+                          <span className={`${styles.statusGraded} inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium`}>
                             <Award size={12} className="mr-1" />
                             Graded
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-400">
+                          <span className={`${styles.statusPending} inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium`}>
+                            <Clock size={12} className="mr-1" />
                             Not Graded
                           </span>
                         )}

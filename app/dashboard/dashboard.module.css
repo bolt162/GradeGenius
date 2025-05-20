@@ -1,0 +1,540 @@
+/* Dashboard Styles */
+
+/* Welcome Banner */
+.welcomeBanner {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+/* Light mode gradient */
+[data-theme="light"] .welcomeBanner {
+  background-image: radial-gradient(
+    circle at 60% 40%,
+    #e0e7ff 0%, /* light blue */
+    #f3e8ff 40%, /* light purple */
+    #fce7f3 70%, /* light pink */
+    #b9def9 100% /* very light blue for the edges */
+  );
+}
+
+/* Dark mode - use the original styling (solid color or whatever was there before) */
+[data-theme="dark"] .welcomeBanner {
+  background-color: var(--bg-secondary);
+  background-image: none;
+}
+
+.welcomeContent {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.welcomeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.welcomeText {
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  font-family: var(--font-oswald);
+}
+
+/* Theme-specific text colors */
+[data-theme="light"] .welcomeText {
+  color: black;
+}
+
+[data-theme="dark"] .welcomeText {
+  color: var(--text-primary);
+}
+
+.welcomeDate {
+    font-family: var(--font-oswald);
+}
+
+/* Theme-specific date colors */
+[data-theme="light"] .welcomeDate {
+  color: black;
+}
+
+[data-theme="dark"] .welcomeDate {
+  color: var(--text-secondary);
+}
+
+.uploadButton {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-oswald);
+}
+
+/* Theme-specific button colors */
+[data-theme="light"] .uploadButton {
+  background-color: black;
+  color: white;
+}
+
+[data-theme="dark"] .uploadButton {
+  background-color: #4f46e5 !important;
+  color: var(--text-primary);
+  font-family: var(--font-oswald);
+}
+
+/* Theme-specific button hover states */
+[data-theme="light"] .uploadButton:hover {
+  background-color: #fff;
+  color: black;
+}
+
+[data-theme="dark"] .uploadButton:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: white;
+}
+
+.headerButtonsContainer {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .headerButtonsContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* Metrics Cards */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .metricsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .metricsGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.metricCard {
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.metricTitle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-oswald);
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+  color: var(--text-primary);
+  font-family: var(--font-oswald);
+}
+
+.metricChange {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.metricIcon {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background-color: var(--bg-tertiary);
+}
+
+/* Main Content */
+.contentGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .contentGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.submissionsPanel {
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 1024px) {
+  .submissionsPanel {
+    grid-column: span 2 / span 2;
+  }
+}
+
+.panelHeader {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panelTitle {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  font-family: var(--font-oswald);
+}
+
+.viewAllLink {
+  font-size: 0.875rem;
+  color: var(--accent-color);
+}
+
+.viewAllLink:hover {
+  color: var(--accent-hover);
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  border: 4px solid var(--accent-color);
+  border-top-color: transparent;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  margin-left: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Error State */
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  color: var(--error-color);
+}
+
+.errorIcon {
+  margin-right: 0.5rem;
+}
+
+/* Empty State */
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  color: var(--text-secondary);
+}
+
+.emptyIcon {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-family: var(--font-oswald);
+}
+
+.emptyDescription {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  max-width: 28rem;
+}
+
+.uploadCta {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background-color: var(--accent-color);
+  border-radius: 0.375rem;
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.uploadCta:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Table */
+.tableContainer {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+}
+
+.tableHead {
+  background-color: var(--bg-tertiary);
+  text-align: left;
+}
+
+.tableHeadCell {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-oswald);
+}
+
+.tableBody {
+  border-top-width: 1px;
+  border-color: black;
+}
+
+.tableBody > tr {
+  border-bottom-width: 1px;
+  border-color: black;
+}
+
+.tableRow:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.tableCell {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.fileName {
+  display: flex;
+  align-items: center;
+}
+
+.fileIcon {
+  color: var(--accent-color);
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.statusCell {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+.statusBadge {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.statusGraded {
+  background-color: rgba(0, 200, 83, 0.2);
+  color: #000000;
+}
+
+.statusPending {
+  background-color: rgba(113, 63, 18, 0.3);
+  color: var(--warning-color);
+}
+
+.statusIcon {
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+}
+
+.timeCell {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.actionCell {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.actionLink {
+  color: var(--success-color);
+}
+
+.actionLink:hover {
+  color: var(--success-color);
+  opacity: 0.8;
+}
+
+/* Grading Queue */
+.queuePanel {
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.queueList {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.queueItem {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--bg-tertiary);
+}
+
+.queueItem:hover {
+  background-color: var(--bg-tertiary);
+  opacity: 0.8;
+}
+
+.queueItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.queueItemTitle {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.queueItemStatus {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(113, 63, 18, 0.3);
+  color: var(--warning-color);
+}
+
+.queueItemTime {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.queueItemAction {
+  margin-top: 0.75rem;
+}
+
+.queueItemLink {
+  width: 100%;
+  text-align: center;
+  display: block;
+  background-color: var(--accent-color);
+  color: white;
+  border-radius: 0.25rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.queueItemLink:hover {
+  background-color: var(--accent-hover);
+}
+
+.emptyQueueContainer {
+  text-align: center;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  color: var(--text-secondary);
+}
+
+.emptyQueueIcon {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.emptyQueueText {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+} 

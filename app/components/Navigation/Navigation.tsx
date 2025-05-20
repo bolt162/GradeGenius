@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './Navigation.module.css';
 
 // Smooth scrolling function from the original Navigation component
@@ -29,6 +29,13 @@ export default function Navigation() {
   const { signOut } = useClerk();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Add state to track if component is mounted (client-side only)
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Set mounted state to true on client-side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   const isLoginPage = pathname === '/login' || pathname === '/signup' || pathname === '/verify';
   
@@ -46,6 +53,54 @@ export default function Navigation() {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  // To avoid hydration mismatch, use client-side rendering for auth-dependent UI
+  if (!isMounted) {
+    // Return a simplified version for server-side rendering
+    return (
+      <nav className={styles.nav}>
+        <div className={styles.container}>
+          <div className={styles.navContent}>
+            {/* Mobile Menu Button - Moved before logo */}
+            <button 
+              className={styles.mobileMenuButton} 
+              aria-label="Toggle mobile menu"
+            >
+              <span className={styles.mobileMenuIcon}></span>
+              <span className={styles.mobileMenuIcon}></span>
+              <span className={styles.mobileMenuIcon}></span>
+            </button>
+            
+            {/* Logo */}
+            <Link href="/" className={styles.logo}>
+              <Image
+                src="/images/grade-genius.png"
+                alt="GradeGenius Logo"
+                width={180}
+                height={40}
+                className={styles.logoImage}
+                priority
+              />
+            </Link>
+
+            {/* Main Navigation */}
+            <div className={styles.mainNav}>
+              <Link href="/" className={pathname === '/' ? styles.activeNavLink : styles.navLink}>
+                Home
+              </Link>
+              <Link href="/#features" className={styles.navLink}>Features</Link>
+              <Link href="/demo" className={styles.navLink}>Demo</Link>
+              <Link href="/#pricing" className={styles.navLink}>Pricing</Link>
+              <Link href="/#contact" className={styles.navLink}>Contact</Link>
+            </div>
+
+            {/* Placeholder for auth container */}
+            <div className={styles.rightNav}></div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className={styles.nav}>
@@ -67,9 +122,8 @@ export default function Navigation() {
             <Image
               src="/images/grade-genius.png"
               alt="GradeGenius Logo"
-              width={0}
-              height={0}
-              sizes="100vw"
+              width={180}
+              height={40}
               className={styles.logoImage}
               priority
             />

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { Coins, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { Coins, CreditCard, AlertCircle } from 'lucide-react';
 import Layout from '../components/Layout';
+import styles from './tokens.module.css';
+import { useTheme } from '../context/ThemeContext';
 
 interface TokenPlan {
   id: string;
@@ -15,6 +17,7 @@ interface TokenPlan {
 
 export default function TokensPage() {
   const { user, isLoaded } = useUser();
+  const { theme } = useTheme();
   const [tokens, setTokens] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,17 +57,6 @@ export default function TokensPage() {
     
     fetchTokenInfo();
   }, [isLoaded, user]);
-
-  // All plans are coming soon since there's no Stripe integration yet
-  const handleSelectPlan = (planId: string) => {
-    // Disabled since all plans are coming soon
-    return;
-  };
-
-  const handlePurchaseTokens = async () => {
-    // Disabled until Stripe integration is implemented
-    return;
-  };
   
   // Format number with commas - safely handle null/undefined
   const formatNumber = (num: number | null | undefined) => {
@@ -72,48 +64,51 @@ export default function TokensPage() {
     return num.toLocaleString();
   };
 
+  // Determine theme class
+  const themeClass = theme === 'dark' ? styles.darkTheme : styles.lightTheme;
+
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
+      <div className={`max-w-4xl mx-auto ${styles.container} ${themeClass}`}>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Token Management</h1>
-          <p className="text-gray-400">Purchase and manage your tokens for grading assignments</p>
+          <h1 className="text-2xl font-bold mb-2 font-oswald">Token Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 font-oswald">Purchase and manage your tokens for grading assignments</p>
         </div>
         
         {/* Current Token Information */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <Coins className="mr-2 text-indigo-400" size={24} />
+        <div className={styles.tokenBalanceCard}>
+          <h2 className={styles.sectionTitle}>
+            <Coins className={styles.iconAccent} size={24} />
             Your Token Balance
           </h2>
           
           {isLoading ? (
             <div className="h-20 flex items-center justify-center">
               <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
-              <span className="ml-3 text-gray-400">Loading token information...</span>
+              <span className="ml-3 text-gray-500 dark:text-gray-400 font-oswald">Loading token information...</span>
             </div>
           ) : error ? (
-            <div className="bg-red-900/30 text-red-400 p-4 rounded-md">
+            <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-md font-oswald">
               <AlertCircle className="inline mr-2" size={20} />
               {error}
             </div>
           ) : tokens !== null ? (
-            <div className="bg-gray-700/50 p-4 rounded-md">
-              <div className="text-sm text-gray-400 mb-1">Available Tokens</div>
-              <div className="text-3xl font-bold text-indigo-400">{formatNumber(tokens)}</div>
-              <div className="text-xs text-gray-500 mt-1">Each token allows you to grade one assignment</div>
+            <div className={styles.tokenBalanceDisplay}>
+              <div className={styles.tokenLabel}>Available Tokens</div>
+              <div className={styles.tokenAmount}>{formatNumber(tokens)}</div>
+              <div className={styles.tokenDescription}>Each token allows you to grade one assignment</div>
             </div>
           ) : (
             <div className="h-20 flex items-center justify-center">
-              <span className="text-gray-400">No token information available</span>
+              <span className="text-gray-500 dark:text-gray-400 font-oswald">No token information available</span>
             </div>
           )}
         </div>
         
         {/* Token Purchase Options */}
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-6 flex items-center">
-            <CreditCard className="mr-2 text-indigo-400" size={24} />
+        <div className={styles.purchaseCard}>
+          <h2 className={styles.sectionTitle}>
+            <CreditCard className={styles.iconAccent} size={24} />
             Purchase Tokens
           </h2>
           
@@ -128,31 +123,31 @@ export default function TokensPage() {
                 aria-label={plan.id === 'pro' ? "Contact us for professional plan" : undefined}
               >
                 {plan.id === 'freemium' ? (
-                  <div className="absolute -top-3 right-4 bg-indigo-600 text-white text-xs py-1 px-2 rounded-full">
+                  <div className="absolute -top-3 right-4 bg-indigo-600 text-white text-xs py-1 px-2 rounded-full font-oswald">
                     Current Plan
                   </div>
                 ) : plan.id === 'standard' ? (
-                  <div className="absolute -top-3 right-4 bg-gray-600 text-white text-xs py-1 px-2 rounded-full">
+                  <div className="absolute -top-3 right-4 bg-gray-600 text-white text-xs py-1 px-2 rounded-full font-oswald">
                     Coming Soon
                   </div>
                 ) : null}
                 
-                <h3 className="text-lg font-semibold mb-2">{plan.name}</h3>
+                <h3 className="text-lg font-semibold mb-2 font-oswald">{plan.name}</h3>
                 {plan.id === 'pro' ? (
-                  <div className="text-gray-400 mb-1">Custom plan based on your needs</div>
+                  <div className="text-gray-400 mb-1 font-oswald">Custom plan based on your needs</div>
                 ) : (
-                  <div className="text-2xl font-bold text-indigo-400 mb-1">{formatNumber(plan.tokens)}</div>
+                  <div className="text-2xl font-bold text-indigo-400 mb-1 font-oswald">{formatNumber(plan.tokens)}</div>
                 )}
-                <div className="text-gray-400 text-sm mb-3">{plan.id === 'pro' ? '' : 'tokens'}</div>
+                <div className="text-gray-400 text-sm mb-3 font-oswald">{plan.id === 'pro' ? '' : 'tokens'}</div>
                 {plan.id === 'pro' ? (
-                  <div className="text-xl font-semibold flex items-center">
+                  <div className="text-xl font-semibold flex items-center font-oswald">
                     Contact Us <span className="ml-1 text-indigo-400">→</span>
                   </div>
                 ) : (
-                  <div className="text-xl font-semibold">{plan.price === 0 ? 'Free' : `$${plan.price.toFixed(2)}`}</div>
+                  <div className="text-xl font-semibold font-oswald">{plan.price === 0 ? 'Free' : `$${plan.price.toFixed(2)}`}</div>
                 )}
                 {plan.id !== 'pro' && plan.tokens > 0 && plan.price > 0 && (
-                  <div className="text-gray-400 text-xs mt-1">
+                  <div className="text-gray-400 text-xs mt-1 font-oswald">
                     ${(plan.price / plan.tokens).toFixed(2)} per token
                   </div>
                 )}
@@ -163,26 +158,26 @@ export default function TokensPage() {
           <div className="flex flex-col items-center">
             <button
               disabled={true}
-              className="px-6 py-3 rounded-md flex items-center bg-gray-700 text-gray-400 cursor-not-allowed"
+              className="px-6 py-3 rounded-md flex items-center bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed font-oswald"
             >
               <CreditCard size={20} className="mr-2" />
               Payment Integration Coming Soon
             </button>
-            <p className="mt-4 text-sm text-yellow-500">
+            <p className="mt-4 text-sm text-yellow-600 dark:text-white font-oswald">
               Online payments are coming soon! Check back for updates.
             </p>
           </div>
           
-          <div className="text-center mt-4 text-sm text-gray-500">
+          <div className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400 font-oswald">
             Your tokens will be added immediately after purchase. No refunds available for token purchases.
           </div>
         </div>
         
         {/* Token Usage Information */}
-        <div className="mt-8 bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">How Tokens Work</h2>
+        <div className={styles.infoCard}>
+          <h2 className="text-xl font-semibold mb-4 font-oswald">How Tokens Work</h2>
           
-          <div className="space-y-4 text-gray-300">
+          <div className="space-y-4 text-gray-700 dark:text-gray-300 font-oswald">
             <p>
               <strong className="text-indigo-400">Tokens</strong> are used every time you grade an assignment. 
               Each grading operation costs exactly 1 token, regardless of the assignment size.
@@ -193,7 +188,7 @@ export default function TokensPage() {
               and re-grading existing assignments count as separate operations and will use 1 token each.
             </p>
             
-            <div className="mt-6 text-sm text-gray-400">
+            <div className="mt-6 text-sm text-gray-400 font-oswald">
               <p>New users receive 12 tokens upon signing up for GradeGenius.</p>
             </div>
           </div>

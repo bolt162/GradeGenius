@@ -1,0 +1,187 @@
+/* Assignment Page Styles */
+
+/* Titles with Oswald font */
+.pageTitle {
+  font-family: var(--font-oswald);
+  font-weight: bold;
+}
+
+.pageSubtitle {
+  font-family: var(--font-oswald);
+}
+
+/* Upload Assignment Button - Light Mode */
+[data-theme="light"] .uploadButton {
+  background-color: white !important;
+  color: black !important;
+  border: 1px solid black !important;
+  font-family: var(--font-oswald);
+}
+
+[data-theme="light"] .uploadButton:hover {
+  background-color: black !important;
+  color: white !important;
+  border: 1px solid black !important;
+}
+
+/* Dark Mode Upload Button styling */
+[data-theme="dark"] .uploadButton {
+  background-color: #4f46e5 !important;
+  color: var(--text-primary);
+  font-family: var(--font-oswald);
+}
+
+[data-theme="dark"] .uploadButton:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: white;
+}
+
+/* Table Styling for Light Mode */
+[data-theme="light"] .tableContainer {
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+[data-theme="light"] .tableHead {
+  background-color: #e2e8f0;
+  text-align: left;
+}
+
+[data-theme="light"] .tableHeadCell {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: black;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-oswald);
+}
+
+[data-theme="dark"] .tableHeadCell {
+  font-family: var(--font-oswald);
+}
+
+[data-theme="light"] .tableBody {
+  border-top-width: 1px;
+  border-color: black;
+}
+
+[data-theme="dark"] .tableBody {
+  border-top-width: 1px;
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .tableBody tr {
+  border-bottom-width: 1px;
+  border-color: black;
+}
+
+[data-theme="dark"] .tableBody tr {
+  border-bottom-width: 1px;
+  border-color: var(--border-color);
+}
+
+/* Remove border from last table row */
+[data-theme="light"] .tableBody tr:last-child {
+  border-bottom: none;
+}
+
+[data-theme="dark"] .tableBody tr:last-child {
+  border-bottom: none;
+}
+
+/* Remove hover effect by setting the same background */
+[data-theme="light"] .tableRow {
+  background-color: white;
+}
+
+/* Light mode column text */
+[data-theme="light"] .columnText {
+  color: black;
+}
+
+/* Status badges for light mode */
+[data-theme="light"] .statusGraded {
+  background-color: rgba(0, 200, 83, 0.6) !important;
+  color: black !important;
+  width: 76px !important;
+  justify-content: center;
+}
+
+[data-theme="light"] .statusPending {
+  background-color: rgba(245, 158, 11, 0.6) !important;
+  color: black !important;
+  width: 100px !important;
+  justify-content: center;
+}
+
+/* Status badges for dark mode */
+[data-theme="dark"] .statusGraded {
+  background-color: rgba(0, 200, 83, 0.2);
+  color: var(--text-primary);
+  width: 76px !important;
+  justify-content: center;
+}
+
+[data-theme="dark"] .statusPending {
+  background-color: rgba(113, 63, 18, 0.3);
+  color: var(--warning-color);
+  width: 100px !important;
+  justify-content: center;
+}
+
+/* Preserve action button colors */
+.viewAction {
+  color: var(--accent-color);
+}
+
+.feedbackAction {
+  color: var(--accent-color);
+}
+
+.gradeAction {
+  color: var(--success-color);
+}
+
+.deleteAction {
+  color: var(--error-color);
+}
+
+/* Loading and empty states */
+.loadingContainer, .emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.emptyIcon {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-family: var(--font-oswald);
+}
+
+.emptyDescription {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  max-width: 28rem;
+} 

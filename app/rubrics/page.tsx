@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
+import './rubrics.css';
 
 // Interface for rubric data
 type ClassLevel = 'Elementary' | 'Middle School' | 'High School' | 'University' | 'Graduate' | 'Professional';
@@ -67,6 +68,9 @@ export default function RubricsPage() {
     questions: ['']
   });
 
+  // Theme detection
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
   // Load rubrics data from API
   useEffect(() => {
     fetchRubrics();
@@ -79,6 +83,41 @@ export default function RubricsPage() {
       setAvailableCourses(courses);
     }
   }, [rubrics]);
+
+  useEffect(() => {
+    // Check if the document is available (client-side)
+    if (typeof document !== 'undefined') {
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      setTheme(isDarkMode ? 'dark' : 'light');
+      
+      // Set up a mutation observer to watch for theme changes
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === 'class') {
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            setTheme(isDarkMode ? 'dark' : 'light');
+          }
+        });
+      });
+      
+      observer.observe(document.documentElement, { attributes: true });
+      
+      // Clean up the observer on component unmount
+      return () => observer.disconnect();
+    }
+  }, []);
+
+  // Update data-theme attributes whenever theme changes
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      // Update all elements that need theme awareness
+      document.querySelectorAll(
+        '.button-primary, .create-rubric-button, .rubrics-container, .search-input, .search-icon, .filter-button, .rubrics-table, .table-body, .table-header, table tr, table td, table th'
+      ).forEach((element) => {
+        element.setAttribute('data-theme', theme);
+      });
+    }
+  }, [theme]);
 
   // Fetch rubrics from the API
   const fetchRubrics = async () => {
@@ -423,14 +462,14 @@ export default function RubricsPage() {
 
   return (
     <Layout activePage="rubrics">
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-6">
+      <div className="rubric-header-section" data-theme={theme}>
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold flex items-center">
+            <h1 className="text-2xl font-bold flex items-center rubrics-title">
               <ClipboardList className="mr-2" size={24} />
               Rubrics
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-gray-500 dark:text-gray-400 mt-1 rubrics-description">
               Create and manage grading rubrics for your assignments
             </p>
           </div>
@@ -441,9 +480,10 @@ export default function RubricsPage() {
               resetForm();
               setIsCreateModalOpen(true);
             }}
-            className={`bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center ${hasReachedMaxRubrics ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`create-rubric-button ${hasReachedMaxRubrics ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={isLoading || hasReachedMaxRubrics}
             title={hasReachedMaxRubrics ? `You have reached the maximum limit of ${MAX_RUBRICS_PER_USER} rubrics.` : ''}
+            data-theme={theme}
           >
             <Plus size={18} className="mr-1" />
             Create Rubric
@@ -460,33 +500,36 @@ export default function RubricsPage() {
             </div>
           </div>
         )}
-
-        {/* Search and filter bar */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-gray-400" />
+      </div>
+      {/* Box 2: Search and Filters */}
+      <div className="rubrics-container bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-4" data-theme={theme}>
+        <div className="flex items-center gap-4">
+          <div className="search-container relative flex-1">
+            <div className="search-icon absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" data-theme={theme}>
+              <Search size={18} />
             </div>
             <input
               type="text"
               placeholder="Search rubrics..."
-              className="pl-10 pr-4 py-2 w-full border rounded-md dark:bg-gray-700 dark:border-gray-600"
+              className="search-input pl-10 pr-4 py-2 w-full border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              data-theme={theme}
             />
           </div>
           <button 
-            className={`flex items-center px-4 py-2 border rounded-md transition-colors
-              ${hasActiveFilters 
-                ? 'bg-indigo-100 border-indigo-300 text-indigo-700 dark:bg-indigo-900 dark:border-indigo-700 dark:text-indigo-300'
-                : 'dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+            className={`filter-button ${hasActiveFilters ? 'filter-button-active' : ''} flex items-center px-4 py-2 border rounded-md transition-colors`}
             onClick={() => setIsFilterModalOpen(true)}
+            data-theme={theme}
           >
-            <SlidersHorizontal size={18} className="mr-2" />
+            <SlidersHorizontal size={18} className="filter-icon mr-2" />
             {hasActiveFilters ? `Filters (${filters.classLevels.length + filters.courses.length + (filters.dateRange !== 'all' ? 1 : 0)})` : 'Filters'}
           </button>
         </div>
+      </div>
 
+      {/* Box 3: Rubrics Table */}
+      <div className="rubrics-container bg-white dark:bg-gray-800 shadow-md rounded-lg mb-6" data-theme={theme}>
         {/* Loading state */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
@@ -503,7 +546,8 @@ export default function RubricsPage() {
             <p className="text-gray-500 dark:text-gray-400 mb-4">{loadError}</p>
             <button
               onClick={fetchRubrics}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
+              className="button button-primary"
+              data-theme={theme}
             >
               Try Again
             </button>
@@ -512,62 +556,62 @@ export default function RubricsPage() {
 
         {/* Rubrics listing */}
         {!isLoading && !loadError && filteredRubrics.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+          <div className="table-container overflow-x-auto">
+            <table className="rubrics-table min-w-full" data-theme={theme}>
+              <thead className="table-header" data-theme={theme}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="table-head-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="table-head-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Class Level
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="table-head-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Course
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="table-head-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Specialization
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="table-head-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Last Updated
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="table-head-cell px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="table-body divide-y divide-gray-700" data-theme={theme}>
                 {filteredRubrics.map((rubric) => (
-                  <tr key={rubric.key} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={rubric.key} className="table-row" data-theme={theme}>
+                    <td className="table-cell px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <FileText size={18} className="text-gray-400 mr-2" />
-                        <div className="text-sm font-medium">{rubric.name}</div>
+                        <FileText size={18} className="assignment-icon mr-2" />
+                        <div className="table-cell-name text-sm font-medium">{rubric.name}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="table-cell px-6 py-4 whitespace-nowrap text-sm">
                       {rubric.classLevel}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="table-cell px-6 py-4 whitespace-nowrap text-sm">
                       {rubric.course}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="table-cell px-6 py-4 whitespace-nowrap text-sm">
                       {rubric.specialization}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="table-cell last-updated-column px-6 py-4 whitespace-nowrap text-sm">
                       {rubric.updatedAt ? new Date(rubric.updatedAt).toLocaleDateString() : 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
+                    <td className="table-cell px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-4">
                         <button 
-                          className="text-indigo-600 hover:text-indigo-900 dark:hover:text-indigo-400"
+                          className="action-button"
                           title="Edit"
                           onClick={() => handleEditRubric(rubric)}
                         >
                           <Edit size={16} />
                         </button>
                         <button 
-                          className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
+                          className="delete-button"
                           title="Delete"
                           onClick={() => handleDeleteRubric(rubric)}
                         >
@@ -596,7 +640,8 @@ export default function RubricsPage() {
                   resetForm();
                   setIsCreateModalOpen(true);
                 }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md inline-flex items-center"
+                className="button button-primary"
+                data-theme={theme}
               >
                 <Plus size={18} className="mr-1" />
                 Create Your First Rubric
@@ -608,16 +653,16 @@ export default function RubricsPage() {
 
       {/* Filters Modal */}
       {isFilterModalOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="modal-overlay fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div 
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
+            className="modal-container bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Filter Rubrics</h2>
+              <div className="modal-header flex justify-between items-center mb-4">
+                <h2 className="modal-title text-xl font-bold text-gray-900 dark:text-white">Filter Rubrics</h2>
                 <button 
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="close-button text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
                   onClick={() => setIsFilterModalOpen(false)}
                   aria-label="Close filter modal"
                 >
@@ -698,7 +743,7 @@ export default function RubricsPage() {
                           ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
                         }`}
-                      onClick={() => setDateRangeFilter(option.value as any)}
+                      onClick={() => setDateRangeFilter(option.value as 'all' | 'lastWeek' | 'lastMonth' | 'lastYear')}
                     >
                       <input 
                         type="radio" 
@@ -728,14 +773,14 @@ export default function RubricsPage() {
 
       {/* Create/Edit Rubric Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="modal-overlay fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div 
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md md:max-w-lg"
+            className="modal-container bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md md:max-w-lg"
             onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
           >
             <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">
+              <div className="modal-header flex justify-between items-center mb-4">
+                <h2 className="modal-title text-xl font-bold text-gray-900 dark:text-white">
                   {isEditing && currentStep === 1 && "Edit Rubric - Basic Information"}
                   {isEditing && currentStep === 2 && "Edit Rubric - Course Information"}
                   {isEditing && currentStep === 3 && "Edit Rubric - Questions"}
@@ -744,7 +789,7 @@ export default function RubricsPage() {
                   {!isEditing && currentStep === 3 && "Rubric Questions"}
                 </h2>
                 <button 
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="close-button text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
                   onClick={resetForm}
                   aria-label="Close modal"
                 >
@@ -762,7 +807,7 @@ export default function RubricsPage() {
                       className={`flex items-center justify-center h-8 w-8 rounded-full cursor-pointer transition-colors
                         ${currentStep >= step 
                           ? 'bg-indigo-600 text-white' 
-                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                         }`}
                       onClick={() => {
                         // Only allow moving to steps we've already visited or the next one
@@ -810,23 +855,23 @@ export default function RubricsPage() {
               {currentStep === 1 && (
                 <div>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Rubric Name
                     </label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="e.g., Essay Writing Rubric"
                       value={newRubric.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                     />
                   </div>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Class Level
                     </label>
                     <select
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                      className="form-select w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       value={newRubric.classLevel}
                       onChange={(e) => handleInputChange('classLevel', e.target.value as ClassLevel)}
                     >
@@ -845,24 +890,24 @@ export default function RubricsPage() {
               {currentStep === 2 && (
                 <div>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Course/Subject
                     </label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="e.g., English, Computer Science"
                       value={newRubric.course}
                       onChange={(e) => handleInputChange('course', e.target.value)}
                     />
                   </div>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Specialization/Topic
                     </label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="e.g., Essay Writing, Algorithms"
                       value={newRubric.specialization}
                       onChange={(e) => handleInputChange('specialization', e.target.value)}
@@ -881,11 +926,11 @@ export default function RubricsPage() {
                     {newRubric.questions.map((question, index) => (
                       <div key={index} className="mb-4 flex items-start">
                         <div className="flex-grow">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Question/Criteria {index + 1}
                           </label>
                           <textarea
-                            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                            className="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             placeholder="e.g., How well does the essay address the prompt?"
                             rows={2}
                             value={question}
@@ -922,9 +967,10 @@ export default function RubricsPage() {
               <div className="flex justify-between mt-6">
                 {currentStep > 1 ? (
                   <button
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
+                    className="button button-secondary px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
                     onClick={handlePrevStep}
                     disabled={isSubmitting}
+                    data-theme={theme}
                   >
                     Back
                   </button>
@@ -934,10 +980,11 @@ export default function RubricsPage() {
                 
                 {isEditing ? (
                   <button
-                    className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center disabled:opacity-50 transition-colors
+                    className={`button button-primary px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center disabled:opacity-50 transition-colors
                       ${currentStep < 3 ? 'ml-auto' : ''}`}
                     onClick={currentStep < 3 ? handleNextStep : handleSubmitRubric}
                     disabled={isSubmitting}
+                    data-theme={theme}
                   >
                     {isSubmitting && currentStep === 3 ? (
                       <>
@@ -955,9 +1002,10 @@ export default function RubricsPage() {
                   </button>
                 ) : (
                   <button
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center disabled:opacity-50 transition-colors ml-auto"
+                    className="button button-primary px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center disabled:opacity-50 transition-colors ml-auto"
                     onClick={currentStep < 3 ? handleNextStep : handleSubmitRubric}
                     disabled={isSubmitting}
+                    data-theme={theme}
                   >
                     {isSubmitting && currentStep === 3 ? (
                       <>
