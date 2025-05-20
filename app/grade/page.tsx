@@ -598,15 +598,15 @@ function GradePageContent() {
     <Layout activePage="assignments">
       <div className="w-full px-4 md:px-6 pb-12">
         <div className="mb-8">
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
+            <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'} font-oswald`}>Grade Assignment</h1>
             <Link 
               href="/assignments" 
-              className={`inline-flex items-center ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4 transition-colors font-oswald`}
+              className={`inline-flex items-center ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors font-oswald`}
             >
               <ChevronLeft className="h-5 w-5 mr-1" />
               Back to Assignments
             </Link>
-            <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'} font-oswald`}>Grade Assignment</h1>
           </div>
         </div>
         

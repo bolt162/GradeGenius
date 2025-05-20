@@ -213,13 +213,6 @@ export default function Navigation() {
                     >
                       Dashboard
                     </Link>
-                    <Link 
-                      href="/profile" 
-                      className={styles.dropdownItem}
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Profile
-                    </Link>
                     <button 
                       onClick={handleSignOut}
                       className={styles.dropdownItem}
