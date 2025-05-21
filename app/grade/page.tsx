@@ -102,7 +102,7 @@ function GradePageContent() {
               // Don't throw here, we'll show the file download link instead
               setError(`Couldn't load file content (${contentResponse.status}). You can still grade it.`);
             }
-          } catch (_) {
+          } catch (_error) {
             // Continue execution, we'll show the file download link
             setError("Couldn't load file content. You can still grade it.");
           }
@@ -110,7 +110,7 @@ function GradePageContent() {
       } else {
         throw new Error('Invalid response from server');
       }
-    } catch (_) {
+    } catch (_error) {
       setError('Failed to load file details. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -575,7 +575,6 @@ function GradePageContent() {
       blockquote: ({children}: {children: React.ReactNode}) => (
         <blockquote className={`border-l-4 ${theme === 'dark' ? 'border-indigo-500 text-gray-300' : 'border-indigo-600 text-gray-600'} pl-4 italic my-4`}>{children}</blockquote>
       ),
-      // Other components remain the same with theme conditional classes...
     };
 
     // If there are multiple questions/sections, render them with separators
@@ -583,13 +582,52 @@ function GradePageContent() {
       <div className="prose prose-invert max-w-none">
         {/* Display overall score if available */}
         {overallScore && (
-          <div className={`${theme === 'dark' ? 'bg-indigo-900/40' : 'bg-indigo-100'} p-4 rounded-lg mb-6 flex items-center justify-between`}>
+          <div className={`${theme === 'dark' ? 'bg-indigo-900/40' : 'bg-blue-100'} p-4 rounded-lg mb-6 flex items-center justify-between`}>
             <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'} m-0 font-oswald`}>Overall Score</h2>
             <div className={`text-2xl font-bold ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'} font-oswald`}>{overallScore}</div>
           </div>
         )}
         
-        {/* Remaining JSX with theme-aware styling... */}
+        {hasMultipleQuestions ? (
+          sections.map((section, index) => (
+            <div key={index} className={index > 0 ? `mt-8 pt-8 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'}` : ""}>
+              <div className={`${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-100'} px-4 py-3 rounded-lg mb-4`}>
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
+                  Question {index + 1}
+                </h3>
+                {rubric && rubric.split('\n')[index] && (
+                  <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
+                    {rubric.split('\n')[index]}
+                  </p>
+                )}
+              </div>
+              
+              {/* @ts-expect-error - Required for ReactMarkdown components */}
+              <ReactMarkdown components={components}>
+                {section}
+              </ReactMarkdown>
+            </div>
+          ))
+        ) : (
+          <>
+            {/* Display the rubric question even for a single question */}
+            {rubric && (
+              <div className={`${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-100'} px-4 py-3 rounded-lg mb-4`}>
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
+                  Question
+                </h3>
+                <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
+                  {rubric.split('\n')[0]}
+                </p>
+              </div>
+            )}
+            
+            {/* @ts-expect-error - Required for ReactMarkdown components */}
+            <ReactMarkdown components={components}>
+              {text}
+            </ReactMarkdown>
+          </>
+        )}
       </div>
     );
   };
@@ -665,14 +703,18 @@ function GradePageContent() {
                     {/* Upload Status Message */}
                     {uploadStatus !== 'idle' && (
                       <div className={`mb-4 p-3 rounded-md flex items-center ${
-                        uploadStatus === 'uploading' ? 'bg-blue-900/30 text-blue-200' : 
-                        uploadStatus === 'success' ? 'bg-green-900/30 text-green-200' : 
-                        'bg-red-900/30 text-red-200'
+                        uploadStatus === 'uploading' 
+                          ? 'bg-blue-900/30 text-blue-200' 
+                        : uploadStatus === 'success' 
+                          ? theme === 'dark' 
+                            ? 'bg-green-900/30 text-green-200' 
+                            : 'bg-[#d4ffd4] text-gray-800' 
+                        : 'bg-red-900/30 text-red-200'
                       }`}>
                         {uploadStatus === 'uploading' ? (
                           <div className="animate-spin mr-2 h-5 w-5 border-2 border-blue-200 border-t-transparent rounded-full"></div>
                         ) : uploadStatus === 'success' ? (
-                          <CheckCircle size={20} className="mr-2 text-green-300" />
+                          <CheckCircle size={20} className={`mr-2 ${theme === 'dark' ? 'text-green-300' : 'text-green-600'}`} />
                         ) : (
                           <AlertCircle size={20} className="mr-2 text-red-300" />
                         )}
@@ -765,10 +807,7 @@ function GradePageContent() {
               </div>
             ) : result ? (
               <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 mb-4 shadow-sm overflow-auto max-h-[80vh]`}>
-                {/* @ts-expect-error - Required for ReactMarkdown components */}
-                <ReactMarkdown components={formatResult(result).props.children.props.components}>
-                  {result}
-                </ReactMarkdown>
+                {formatResult(result)}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center p-12">
