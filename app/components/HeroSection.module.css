@@ -153,4 +153,7 @@
         max-width: 100%;
         width: 100%;
     }
+    .title {
+        margin-top: 65px;
+    }
 }
