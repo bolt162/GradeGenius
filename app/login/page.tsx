@@ -528,6 +528,60 @@ function LoginFormFallback() {
   );
 }
 
+// Mobile Detection Component
+function MobileDetectionWrapper({ children }: { children: React.ReactNode }) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const checkMobile = () => {
+      const userAgent = 
+        typeof window.navigator === "undefined" ? "" : navigator.userAgent;
+      const mobile = Boolean(
+        userAgent.match(
+          /Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i
+        )
+      );
+      setIsMobile(mobile);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Don't render anything during SSR to avoid hydration mismatch
+  if (!isClient) return null;
+
+  if (isMobile) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <Image 
+              src="/images/main_logo.png"
+              alt="GradeGenius Logo"
+              width={48}
+              height={48}
+              className="w-auto h-12"
+            />
+          </div>
+          <h1 className="text-3xl font-bold text-neutral-900">Desktop Only</h1>
+          <p className="text-neutral-600 mt-2">GradeGenius requires a desktop browser for optimal performance. Please access from a laptop or desktop computer.</p>
+          <div className="mt-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 mx-auto text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+}
+
 // Main page component
 export default function LoginPage() {
   return (
@@ -537,7 +591,9 @@ export default function LoginPage() {
       <main className="pt-32 pb-20">
         <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
           <Suspense fallback={<LoginFormFallback />}>
-            <LoginForm />
+            <MobileDetectionWrapper>
+              <LoginForm />
+            </MobileDetectionWrapper>
           </Suspense>
         </div>
       </main>
