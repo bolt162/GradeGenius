@@ -7,8 +7,8 @@ import styles from './TestimonialsSection.module.css';
 const TestimonialsSection: React.FC = () => {
   const testimonials = [
     {
-      name: "Dr. Sarah Johnson",
-      role: "Communication Professor",
+      name: "Kalyani Parikh",
+      role: "High School English Teacher",
       text: "GradeGenius has transformed how I grade assignments. The AI feedback is remarkably accurate, and my students receive more detailed feedback than ever before.",
       avatar: "/images/sarah.png"
     },
@@ -25,10 +25,10 @@ const TestimonialsSection: React.FC = () => {
       avatar: "/images/emily.png" // Replace with actual path
     },
     {
-      name: "Prof. David Kim",
-      role: "Computer Science Professor",
-      text: "Implementing GradeGenius across our department has led to a 40% reduction in grading time while improving student satisfaction scores on feedback quality.",
-      avatar: "/images/david.png" // Replace with actual path
+      name: "Dr. Diwakar Sharma",
+      role: "Former Director of WWF, India",
+      text: "Implementing GradeGenius across our department has led to a 40% reduction in grading time while helping me focus on providing quality session with my students.",
+      avatar: "/images/dr-sharma.jpeg" // Replace with actual path
     },
     {
       name: "Lisa Thompson",
