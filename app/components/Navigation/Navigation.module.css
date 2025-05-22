@@ -305,20 +305,25 @@
 /* Specific adjustments for very small screens */
 @media (max-width: 400px) {
   .authButtons {
-    position: fixed;
-    top: 60px;
-    right: 10px;
-    z-index: 40;
+    position: relative;
+    display: flex;
+    margin-right: 5px;
   }
   
   .signupButton {
-    min-width: 100px;
+    min-width: 80px;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.7rem;
     font-weight: 600;
-    background-color: #01abee; /* Brighter blue for better visibility */
+    background-color: black; /* Brighter blue for better visibility */
   }
   
   /* Apply hover effect on touch for mobile */
   .signupButton:active {
     background-color: #0098d4;
+  }
+  
+  .logoImage {
+    width: 150px; /* Even smaller logo on very small screens */
   }
 }
