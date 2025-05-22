@@ -27,6 +27,7 @@ interface RubricData {
   course: string;
   specialization: string;
   questions: string[];
+  questionWeights?: number[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -65,7 +66,8 @@ export default function RubricsPage() {
     classLevel: 'High School',
     course: '',
     specialization: '',
-    questions: ['']
+    questions: [''],
+    questionWeights: [10]
   });
 
   // Theme detection
@@ -248,25 +250,56 @@ export default function RubricsPage() {
     setNewRubric(prev => ({ ...prev, questions: updatedQuestions }));
   };
 
+  // Handle weight changes
+  const handleWeightChange = (index: number, value: string) => {
+    // Parse the value to a number, ensure it's between 1 and 100
+    let numValue = parseInt(value, 10);
+    if (isNaN(numValue) || numValue < 1) numValue = 1;
+    if (numValue > 100) numValue = 100;
+    
+    const updatedWeights = [...newRubric.questionWeights || []];
+    updatedWeights[index] = numValue;
+    
+    setNewRubric(prev => ({
+      ...prev,
+      questionWeights: updatedWeights
+    }));
+  };
+
   // Add new question field
   const addQuestion = () => {
-    if (newRubric.questions.length >= 10) {
-      alert('You can only add up to 10 questions per rubric');
-      return;
-    }
-    
-    setNewRubric(prev => ({ 
-      ...prev, 
-      questions: [...prev.questions, ''] 
-    }));
+    setNewRubric(prev => {
+      // Check if the current questions are valid
+      const allValid = prev.questions.every(q => q.trim().length > 0);
+      
+      if (!allValid) {
+        alert('Please fill in all existing questions before adding a new one.');
+        return prev;
+      }
+      
+      return {
+        ...prev,
+        questions: [...prev.questions, ''],
+        questionWeights: [...(prev.questionWeights || Array(prev.questions.length).fill(10)), 10]
+      };
+    });
   };
 
   // Remove question field
   const removeQuestion = (index: number) => {
-    if (newRubric.questions.length > 1) {
-      const updatedQuestions = newRubric.questions.filter((_, i) => i !== index);
-      setNewRubric(prev => ({ ...prev, questions: updatedQuestions }));
-    }
+    setNewRubric(prev => {
+      const updatedQuestions = [...prev.questions];
+      updatedQuestions.splice(index, 1);
+      
+      const updatedWeights = [...(prev.questionWeights || [])];
+      updatedWeights.splice(index, 1);
+      
+      return {
+        ...prev,
+        questions: updatedQuestions,
+        questionWeights: updatedWeights
+      };
+    });
   };
 
   // Submit rubric creation/update
@@ -348,7 +381,8 @@ export default function RubricsPage() {
       classLevel: 'High School',
       course: '',
       specialization: '',
-      questions: ['']
+      questions: [''],
+      questionWeights: [10]
     });
     setCurrentStep(1);
     setIsCreateModalOpen(false);
@@ -407,6 +441,7 @@ export default function RubricsPage() {
         course: fullRubric.course,
         specialization: fullRubric.specialization,
         questions: fullRubric.questions || [''],
+        questionWeights: fullRubric.questionWeights || [10]
       });
       
       // Set editing mode and selected rubric with original key and name
@@ -929,16 +964,36 @@ export default function RubricsPage() {
                           <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Question/Criteria {index + 1}
                           </label>
-                          <textarea
-                            className="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="e.g., How well does the essay address the prompt?"
-                            rows={2}
-                            value={question}
-                            onChange={(e) => handleQuestionChange(index, e.target.value)}
-                            maxLength={200}
-                          />
-                          <div className="text-xs text-gray-500 mt-1 text-right">
-                            {question.length}/200 characters
+                          <div className="flex space-x-2">
+                            <div className="flex-grow">
+                              <textarea
+                                className="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="e.g., How well does the essay address the prompt?"
+                                rows={2}
+                                value={question}
+                                onChange={(e) => handleQuestionChange(index, e.target.value)}
+                                maxLength={200}
+                              />
+                              <div className="text-xs text-gray-500 mt-1 text-right">
+                                {question.length}/200 characters
+                              </div>
+                            </div>
+                            <div className="w-24">
+                              <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Weight
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                max="100"
+                                className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                value={newRubric.questionWeights?.[index] || 10}
+                                onChange={(e) => handleWeightChange(index, e.target.value)}
+                              />
+                              <div className="text-xs text-gray-500 mt-1 text-center">
+                                Points
+                              </div>
+                            </div>
                           </div>
                         </div>
                         {newRubric.questions.length > 1 && (

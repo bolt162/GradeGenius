@@ -170,6 +170,7 @@ export function parseFilename(filename: string): string {
  * @param rubric The rubric used for grading
  * @param username Optional username to use in the path instead of userId
  * @param rubricQuestions Optional array of rubric questions
+ * @param rubricWeights Optional array of rubric weights
  * @returns Object with grade details
  */
 export async function storeGradeResult(
@@ -178,7 +179,8 @@ export async function storeGradeResult(
   gradeResult: string,
   rubric: string,
   username?: string,
-  rubricQuestions?: string[]
+  rubricQuestions?: string[],
+  rubricWeights?: number[]
 ) {
   // Extract the original filename from the fileKey
   const fileName = fileKey.split('/').pop() || 'unknown-file';
@@ -195,7 +197,8 @@ export async function storeGradeResult(
     gradeResult,
     timestamp: new Date().toISOString(),
     userId,
-    rubricQuestions: rubricQuestions || (rubric ? rubric.split('\n').filter(line => line.trim().length > 0) : [])
+    rubricQuestions: rubricQuestions || (rubric ? rubric.split('\n').filter(line => line.trim().length > 0) : []),
+    rubricWeights: rubricWeights || []
   };
   
   // Create a grade key in the format: folderName/grades/originalFileName-grade.json

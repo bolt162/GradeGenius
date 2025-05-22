@@ -6,6 +6,10 @@ import { getRubric } from '@/app/lib/s3';
 import { getUserTokens, spendUserTokens, calculateTokens } from '@/app/lib/dynamo';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { singleQuestionGradingPrompt, defaultGradingPrompt } from '@/app/lib/prompts';
+import { RAGService } from '@/app/lib/rag/ragService';
+
+// Initialize RAG service
+const ragService = new RAGService();
 
 // POST /api/extension/grade - Grade submission from extension
 export async function POST(request: NextRequest) {
@@ -215,8 +219,23 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // We no longer process or store extension submissions
-    console.log('[Extension API] Extension submissions are not stored');
+    // Generate a virtual file key for extension submissions (needed for RAG but won't be saved)
+    const timestamp = Date.now();
+    const virtualFileKey = `${username || userId}/extension/${timestamp}-submission.txt`;
+    
+    // Process the submission for RAG context
+    try {
+      console.log('[Extension API] Processing submission with RAG service');
+      await ragService.processSubmission({
+        content: studentWork,
+        type: detectedType,
+        userId,
+        fileKey: virtualFileKey
+      });
+    } catch (ragError: any) {
+      console.error('[Extension API] RAG processing failed:', ragError);
+      // Continue without RAG processing if it fails
+    }
     
     // Process each question in the rubric
     let responseContent = '';
@@ -231,9 +250,24 @@ export async function POST(request: NextRequest) {
         const question = rubricQuestions[i];
         console.log(`[Extension API] Processing question ${i+1}: ${question.substring(0, 50)}...`);
         
-        // Skip context retrieval since we're not storing extension feedback
+        // Retrieve relevant context for this specific question
+        let questionContext = null;
+        try {
+          questionContext = await ragService.retrieveContext(
+            question,
+            {
+              contentType: detectedType,
+              userId,
+              fileKey: virtualFileKey
+            }
+          );
+          
+          console.log(`[Extension API] Retrieved context for question ${i+1}:`, questionContext ? questionContext.chunks.length : 'none');
+        } catch (contextError) {
+          console.error(`[Extension API] Error retrieving context for question ${i+1}:`, contextError);
+        }
         
-        // Format the prompt with the question
+        // Format the prompt with the question and context
         const promptTemplate = PromptTemplate.fromTemplate(singleQuestionGradingPrompt);
         
         const formattedPrompt = await promptTemplate.format({
@@ -241,7 +275,8 @@ export async function POST(request: NextRequest) {
           specialization: courseInfo.specialization || "Not specified",
           classLevel: courseInfo.classLevel || "Not specified",
           question: question,
-          context: studentWork, // Use student work directly without RAG
+          weight: 10, // Default weight of 10 points
+          context: questionContext ? JSON.stringify(questionContext.chunks) : studentWork,
           rubric: ""  // Empty since the question already has the rubric criteria
         });
         
@@ -396,4 +431,4 @@ export async function OPTIONS() {
       }
     }
   );
-} 
+}

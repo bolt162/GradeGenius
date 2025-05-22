@@ -42,19 +42,19 @@ const PricingSection: React.FC<PricingSectionProps> = ({ scrollToContact }) => {
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>20,000 tokens</span>
+                <span className={styles.featureText}>12 assignments</span>
               </li>
               <li className={styles.featureItem}>
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>Basic analytics</span>
+                <span className={styles.featureText}>Long contextual grading</span>
               </li>
               <li className={styles.featureItem}>
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>Email support</span>
+                <span className={styles.featureText}>Custom rubrics</span>
               </li>
             </ul>
             <Link 
@@ -73,7 +73,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ scrollToContact }) => {
             </div>
             <h3 className={styles.cardTitle}>Standard</h3>
             <div className={styles.priceContainer}>
-              <span className={styles.price}>$9.99</span>
+              <span className={styles.price}>$19.99</span>
               <span className={styles.pricePeriod}>/mo</span>
             </div>
             <ul className={styles.featuresList}>
@@ -81,25 +81,25 @@ const PricingSection: React.FC<PricingSectionProps> = ({ scrollToContact }) => {
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>50,000 tokens</span>
+                <span className={styles.featureText}>200 assignments</span>
               </li>
               <li className={styles.featureItem}>
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>Advanced analytics</span>
+                <span className={styles.featureText}>Analytics</span>
               </li>
               <li className={styles.featureItem}>
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>Priority support</span>
+                <span className={styles.featureText}>Email support</span>
               </li>
               <li className={styles.featureItem}>
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>Custom rubrics</span>
+                <span className={styles.featureText}>Batch grading</span>
               </li>
             </ul>
             <button 
@@ -125,7 +125,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ scrollToContact }) => {
                 <span className={styles.featureCheckmark}>
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
-                <span className={styles.featureText}>Unlimited tokens</span>
+                <span className={styles.featureText}>Unlimited assignments</span>
               </li>
               <li className={styles.featureItem}>
                 <span className={styles.featureCheckmark}>

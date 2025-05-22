@@ -131,7 +131,11 @@ export async function spendUserTokens(userId: string, amount: number = 1): Promi
   try {
     // Check if user has enough tokens
     const currentTokens = await getUserTokens(userId);
-    if (currentTokens === null || currentTokens < amount) {
+    if (currentTokens === null) {
+      return null;
+    }
+    
+    if (currentTokens < amount) {
       return null;
     }
 

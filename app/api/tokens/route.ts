@@ -51,10 +51,13 @@ export async function GET() {
       tokenInfo = await getUserTokens(userId);
     }
     
+    // Fix: Check explicitly for null or undefined instead of using falsy check
+    const finalTokens = tokenInfo === null || tokenInfo === undefined ? 20000 : tokenInfo;
+    
     // Return token information
     return NextResponse.json({
       success: true,
-      tokens: tokenInfo || 20000 // Fallback if token retrieval fails
+      tokens: finalTokens // Fallback if token retrieval fails
     });
   } catch (error: any) {
     console.error('Error fetching user tokens:', error);

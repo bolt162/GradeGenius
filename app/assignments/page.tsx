@@ -349,8 +349,7 @@ export default function AssignmentsPage() {
     if (scoreCount > 0) {
       if (totalPossible > 0) {
         // Always show as percentage out of 100
-        const percentage = Math.round((totalScore / totalPossible) * 100);
-        overallScore = `${percentage} out of 100`;
+        overallScore = `${totalScore} out of ${totalPossible}`;
       }
     }
 

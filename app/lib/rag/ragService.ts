@@ -1,7 +1,6 @@
 // app/lib/rag/ragService.ts
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { Document } from '@langchain/core/documents';
 import { Pinecone } from '@pinecone-database/pinecone';
 import { DocumentChunk, ContentType } from './types';
 import { spendUserTokens } from '../dynamo';

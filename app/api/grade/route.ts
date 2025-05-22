@@ -76,7 +76,8 @@ export async function POST(request: NextRequest) {
       // Check if user has enough tokens
       const userTokenData = await getUserTokens(userId);
       
-      if (!userTokenData) {
+      // Fix: Check explicitly for null or undefined instead of using falsy check
+      if (userTokenData === null || userTokenData === undefined) {
         return NextResponse.json(
           { error: 'Unable to retrieve token information. Please try again.' },
           { status: 403 }
@@ -188,6 +189,7 @@ export async function POST(request: NextRequest) {
     // Get rubric details if a saved rubric was selected
     let rubricDetails = null;
     let rubricQuestions: string[] = [];
+    let rubricWeights: number[] = [];
     let courseInfo = { course: "", specialization: "", classLevel: "" };
     
     // If we have a selected rubric key, fetch the rubric details
@@ -197,6 +199,7 @@ export async function POST(request: NextRequest) {
         if (rubricData) {
           rubricDetails = rubricData;
           rubricQuestions = rubricData.questions || [];
+          rubricWeights = rubricData.questionWeights || rubricQuestions.map(() => 10);
           
           // Extract course information
           courseInfo = {
@@ -210,6 +213,7 @@ export async function POST(request: NextRequest) {
             numQuestions: rubricQuestions.length,
             courseInfo,
             questions: rubricQuestions,
+            weights: rubricWeights,
             completeRubricData: JSON.stringify(rubricData)
           });
         }
@@ -219,9 +223,12 @@ export async function POST(request: NextRequest) {
     } else if (rubric) {
       // If using a manual rubric, split by newlines to get questions
       rubricQuestions = rubric.split('\n').filter((q: string) => q.trim().length > 0);
+      // For manual rubrics, default all weights to 10
+      rubricWeights = rubricQuestions.map(() => 10);
       console.log('[Grade API] Using manual rubric:', {
         rubricText: rubric,
-        parsedQuestions: rubricQuestions
+        parsedQuestions: rubricQuestions,
+        weights: rubricWeights
       });
     }
 
@@ -264,9 +271,11 @@ export async function POST(request: NextRequest) {
             specialization: courseInfo.specialization || "General",
             classLevel: courseInfo.classLevel || "General",
             question: question,
-            context: questionContext ? JSON.stringify(questionContext.chunks) : "No additional context available."
+            weight: rubricWeights[i] || 10,
+            context: questionContext ? JSON.stringify(questionContext.chunks.map(chunk => chunk.content)) : "No additional context available."
           });
           
+          console.log(`[Grade API] Prompt for question ${i+1}:`, formattedPrompt);
           console.log(`[Grade API] Sending prompt for question ${i+1} to AI model`);
           
           // Get response from AI model
@@ -300,9 +309,10 @@ export async function POST(request: NextRequest) {
         const formattedPrompt = await promptTemplate.format({
           rubric: rubric || "Grade on clarity, organization, and accuracy.",
           studentWork: actualContent,
-          context: defaultContext || "No additional context available."
+          context: defaultContext ? JSON.stringify(defaultContext.chunks.map(chunk => chunk.content)) : "No additional context available."
         });
         
+        console.log('[Grade API] Default prompt:', formattedPrompt);
         console.log('[Grade API] Sending default prompt with context to AI model');
         
         // Get response from AI model
@@ -327,6 +337,7 @@ export async function POST(request: NextRequest) {
         studentWork: actualContent
       });
     
+      console.log('[Grade API] Demo mode prompt:', formattedPrompt);
       // Get response from AI model
       const response = await model.invoke(formattedPrompt);
       responseText = String(response.content);
@@ -343,7 +354,8 @@ export async function POST(request: NextRequest) {
           responseText,
           rubric || 'Grade on clarity, organization, and accuracy.',
           user_name,
-          rubricQuestions
+          rubricQuestions,
+          rubricWeights
         );
         console.log('[Grade API] Stored grading result:', resultKey);
       } catch (error) {

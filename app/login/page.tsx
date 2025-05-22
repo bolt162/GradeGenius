@@ -8,6 +8,285 @@ import { useSignIn, useClerk, useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '../components/Footer';
 
+// Forgot Password Modal Component
+function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { signIn, isLoaded, setActive } = useSignIn();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<'email' | 'verification' | 'complete'>('email');
+
+  // Password strength requirements state
+  const [requirements, setRequirements] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    symbol: false,
+  });
+  
+  // Check password requirements on change
+  const updatePasswordRequirements = (password: string) => {
+    setRequirements({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      symbol: /[^A-Za-z0-9]/.test(password),
+    });
+  };
+
+  // Reset the modal state when closed
+  const handleClose = () => {
+    setEmail('');
+    setCode('');
+    setNewPassword('');
+    setErrorMessage('');
+    setStep('email');
+    onClose();
+  };
+
+  // Function to send password reset code
+  const handleSendResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isLoaded) return;
+    
+    try {
+      setIsLoading(true);
+      setErrorMessage('');
+      
+      // Use Clerk's reset password flow
+      await signIn?.create({
+        strategy: 'reset_password_email_code',
+        identifier: email,
+      });
+      
+      setStep('verification');
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      setErrorMessage(err?.errors?.[0]?.message || 'Failed to send reset code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to verify code and set new password
+  const handleVerifyCodeAndReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isLoaded) return;
+
+    // Check all requirements are met
+    const allRequirementsMet = 
+      requirements.length && 
+      requirements.uppercase && 
+      requirements.lowercase && 
+      requirements.number && 
+      requirements.symbol;
+      
+    if (!allRequirementsMet) {
+      setErrorMessage('Password does not meet all requirements');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setErrorMessage('');
+      
+      // Verify the code and set the new password
+      const result = await signIn?.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
+        password: newPassword,
+      });
+      
+      if (result?.status === 'complete') {
+        // Set the active session
+        await setActive({ session: result.createdSessionId });
+        setStep('complete');
+        
+        // Auto redirect after successful password reset
+        setTimeout(() => {
+          handleClose();
+          router.push('/dashboard');
+        }, 3000);
+      }
+    } catch (err: any) {
+      console.error('Verification error:', err);
+      setErrorMessage(err?.errors?.[0]?.message || 'Failed to verify code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Reset Password</h2>
+          <button onClick={handleClose} className="text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {step === 'email' && (
+          <>
+            <p className="text-gray-600 mb-4">
+              Enter your email address and we'll send you a verification code to reset your password.
+            </p>
+            
+            {errorMessage && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded text-sm">
+                {errorMessage}
+              </div>
+            )}
+            
+            <form onSubmit={handleSendResetCode}>
+              <div className="mb-4">
+                <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  id="reset-email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-black"
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !isLoaded}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-70"
+                >
+                  {isLoading ? 'Sending...' : 'Send Verification Code'}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+
+        {step === 'verification' && (
+          <>
+            <p className="text-gray-600 mb-4">
+              We've sent a verification code to <span className="font-medium">{email}</span>. Please enter the code and set your new password.
+            </p>
+            
+            {errorMessage && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded text-sm">
+                {errorMessage}
+              </div>
+            )}
+            
+            <form onSubmit={handleVerifyCodeAndReset}>
+              <div className="mb-4">
+                <label htmlFor="verification-code" className="block text-sm font-medium text-gray-700 mb-1">
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  id="verification-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-black"
+                  placeholder="Enter the code from your email"
+                  required
+                />
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  id="new-password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    updatePasswordRequirements(e.target.value);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-black"
+                  placeholder="Create a new password"
+                  required
+                />
+                
+                {newPassword.length > 0 && (
+                  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-1">
+                    <p className={`text-sm ${requirements.length ? 'text-green-600' : 'text-gray-500'}`}>
+                      {requirements.length ? '✓' : '○'} At least 8 characters
+                    </p>
+                    <p className={`text-sm ${requirements.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                      {requirements.uppercase ? '✓' : '○'} Uppercase letter
+                    </p>
+                    <p className={`text-sm ${requirements.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                      {requirements.lowercase ? '✓' : '○'} Lowercase letter
+                    </p>
+                    <p className={`text-sm ${requirements.number ? 'text-green-600' : 'text-gray-500'}`}>
+                      {requirements.number ? '✓' : '○'} Number
+                    </p>
+                    <p className={`text-sm ${requirements.symbol ? 'text-green-600' : 'text-gray-500'}`}>
+                      {requirements.symbol ? '✓' : '○'} Special character
+                    </p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setStep('email')}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !isLoaded}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-70"
+                >
+                  {isLoading ? 'Verifying...' : 'Reset Password'}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+
+        {step === 'complete' && (
+          <div className="text-center py-4">
+            <div className="mb-4 text-green-600">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-gray-700 mb-4">Your password has been reset successfully!</p>
+            <p className="text-gray-500 mb-4">You'll be redirected to the dashboard momentarily...</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Component that uses searchParams, wrapped in Suspense
 function LoginForm() {
   const { signIn, isLoaded, setActive } = useSignIn();
@@ -21,6 +300,7 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Check if user is already signed in and redirect to dashboard
   useEffect(() => {
@@ -191,9 +471,13 @@ function LoginForm() {
           </div>
 
           <div className="text-sm">
-            <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <button 
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
               Forgot password?
-            </a>
+            </button>
           </div>
         </div>
 
@@ -214,6 +498,12 @@ function LoginForm() {
           </Link>
         </p>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={showForgotPassword} 
+        onClose={() => setShowForgotPassword(false)} 
+      />
     </div>
   );
 }

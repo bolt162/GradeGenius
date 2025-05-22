@@ -101,6 +101,9 @@ Class Level: {classLevel}
 GRADING QUESTION:
 {question}
 
+QUESTION WEIGHT:
+{weight} points
+
 RELEVANT CONTEXT:
 {context}
 
@@ -108,8 +111,7 @@ INSTRUCTIONS:
 1. Evaluate ONLY the specific aspect mentioned in the question.
 2. Provide detailed assessment focused solely on this criteria.
 3. Include specific examples from the context that relate to this question.
-4. Suggest specific improvements related to this aspect.
-5. Provide a score or evaluation for this specific aspect (out of 10 points).
+4. Provide a score or evaluation for this specific aspect (out of {weight} points).
 
 FORMAT YOUR RESPONSE AS FOLLOWS:
 # Assessment
@@ -118,9 +120,6 @@ FORMAT YOUR RESPONSE AS FOLLOWS:
 # Examples from Context
 [Specific quotes or examples from the context that support your assessment]
 
-# Suggestions for Improvement
-[Specific suggestions related to this question]
-
 # Score for this Aspect
-[Score] /10 - [Brief justification]
+[Score] /{weight} - [Brief justification]
 `; 

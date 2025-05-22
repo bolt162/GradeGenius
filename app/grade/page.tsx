@@ -532,9 +532,8 @@ function GradePageContent() {
     let overallScore = '';
     if (scoreCount > 0) {
       if (totalPossible > 0) {
-        // Always show as percentage out of 100
-        const percentage = Math.round((totalScore / totalPossible) * 100);
-        overallScore = `${percentage} out of 100`;
+        // Show raw score instead of percentage
+        overallScore = `${totalScore} / ${totalPossible}`;
       }
     }
 
@@ -595,9 +594,9 @@ function GradePageContent() {
                 <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
                   Question {index + 1}
                 </h3>
-                {rubric && rubric.split('\n')[index] && (
-                  <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
-                    {rubric.split('\n')[index]}
+                {selectedRubricDetails && selectedRubricDetails.questions && selectedRubricDetails.questions[index] && (
+                  <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald whitespace-pre-wrap`}>
+                    {selectedRubricDetails.questions[index]}
                   </p>
                 )}
               </div>
@@ -616,8 +615,8 @@ function GradePageContent() {
                 <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
                   Question
                 </h3>
-                <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
-                  {rubric.split('\n')[0]}
+                <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald whitespace-pre-wrap`}>
+                  {rubric}
                 </p>
               </div>
             )}

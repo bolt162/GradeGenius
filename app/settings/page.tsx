@@ -111,17 +111,23 @@ export default function SettingsPage() {
     setIsSubmitting(true);
     
     try {
-      // Here you would call Clerk's API to update the password
-      // For demo purposes, we're just simulating a successful update
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setPasswordSuccess('Password updated successfully');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      // Use Clerk's API to update the password
+      if (user) {
+        await user.updatePassword({
+          currentPassword,
+          newPassword,
+        });
+        
+        setPasswordSuccess('Password updated successfully');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        throw new Error('User not found');
+      }
     } catch (error) {
-      setPasswordError('Failed to update password. Please try again.');
       console.error('Password update error:', error);
+      setPasswordError('Failed to update password. Please ensure your current password is correct.');
     } finally {
       setIsSubmitting(false);
     }
@@ -256,17 +262,6 @@ export default function SettingsPage() {
                       />
                       <p className={`mt-1 text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>To change your email, please visit your Clerk profile.</p>
                     </div>
-                    
-                    <div className="pt-4">
-                      <a 
-                        href="https://accounts.clerk.dev/account" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 font-oswald"
-                      >
-                        Manage Account at Clerk
-                      </a>
-                    </div>
                   </div>
                 </div>
               )}
@@ -391,7 +386,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="mb-2">
                         <span className={`text-2xl font-bold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Freemium</span>
-                        <span className={`ml-2 font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>- 20,000 tokens</span>
+                        <span className={`ml-2 font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>- 12 tokens</span>
                       </div>
                     </div>
                     
@@ -411,10 +406,10 @@ export default function SettingsPage() {
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <h4 className={`font-medium font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Standard Plan</h4>
-                              <p className={`text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>50,000 tokens per month</p>
+                              <p className={`text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>200 tokens per month</p>
                             </div>
                             <div className="text-right">
-                              <span className={`text-lg font-bold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>$9.99</span>
+                              <span className={`text-lg font-bold font-oswald ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>$19.99</span>
                               <span className={`text-sm font-oswald ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>/month</span>
                             </div>
                           </div>
@@ -474,4 +469,4 @@ export default function SettingsPage() {
       </div>
     </Layout>
   );
-} 
+}
