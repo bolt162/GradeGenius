@@ -63,10 +63,10 @@ export default function TokenDisplay() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center p-2 bg-gray-800 rounded-md text-sm">
+      <div className={`flex items-center p-2 ${currentTheme === 'light' ? 'bg-white border border-black' : 'bg-gray-800'} rounded-md text-sm`}>
         <div className="animate-pulse flex space-x-2 items-center">
-          <Coins size={16} className="text-gray-400" />
-          <span className="text-gray-400">Loading tokens...</span>
+          <Coins size={16} className={`${currentTheme === 'light' ? 'text-black' : 'text-gray-400'}`} />
+          <span className={`${currentTheme === 'light' ? 'text-black' : 'text-gray-400'}`}>Loading tokens...</span>
         </div>
       </div>
     );
@@ -74,7 +74,7 @@ export default function TokenDisplay() {
 
   if (error || tokens === null) {
     return (
-      <div className="flex items-center p-2 bg-gray-800 rounded-md text-sm">
+      <div className={`flex items-center p-2 ${currentTheme === 'light' ? 'bg-white border border-black' : 'bg-gray-800'} rounded-md text-sm`}>
         <Coins size={16} className="text-red-400 mr-2" />
         <span className="text-red-400">Unable to load tokens</span>
       </div>

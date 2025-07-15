@@ -7,12 +7,12 @@
 
 /* Dark mode variables */
 [data-theme="dark"] {
-  --background: #0a0a0a;
+  --background: #000000;
   --foreground: #ededed;
   
   /* Dashboard specific colors */
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
   --bg-tertiary: #334155;
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
@@ -25,8 +25,8 @@
   --error-color: #ef4444;
   --icon-primary: #cbd5e1;
   --header-bg: #1e293b;
-  --card-bg: #1e293b;
-  --sidebar-bg: #0f172a;
+  --card-bg: #000000;
+  --sidebar-bg: #000000;
   --footer-bg: #1e293b;
   --footer-text: #f8fafc;
 }

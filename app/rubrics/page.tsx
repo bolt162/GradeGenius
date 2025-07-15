@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import { 
   ClipboardList, 
@@ -15,6 +15,9 @@ import {
   Loader2
 } from 'lucide-react';
 import './rubrics.css';
+
+const MAX_QUESTIONS_PER_RUBRIC = 20;
+const MAX_CHARACTERS_PER_QUESTION = 500;
 
 // Interface for rubric data
 type ClassLevel = 'Elementary' | 'Middle School' | 'High School' | 'University' | 'Graduate' | 'Professional';
@@ -72,6 +75,12 @@ export default function RubricsPage() {
 
   // Theme detection
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  
+  // Ref for scrolling to new questions
+  const questionsContainerRef = useRef<HTMLDivElement>(null);
+  
+  // State to track when we should scroll to a new question
+  const [shouldScrollToNewQuestion, setShouldScrollToNewQuestion] = useState(false);
 
   // Load rubrics data from API
   useEffect(() => {
@@ -120,6 +129,30 @@ export default function RubricsPage() {
       });
     }
   }, [theme]);
+
+  // Handle scrolling to new question when one is added
+  useEffect(() => {
+    if (shouldScrollToNewQuestion && questionsContainerRef.current && newRubric.questions.length > 0) {
+      const questionElements = questionsContainerRef.current.querySelectorAll('[data-question-index]');
+      const newQuestionElement = questionElements[newRubric.questions.length - 1] as HTMLElement;
+      
+      if (newQuestionElement) {
+        newQuestionElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+        
+        // Focus on the new question's textarea
+        const textarea = newQuestionElement.querySelector('textarea');
+        if (textarea) {
+          textarea.focus();
+        }
+      }
+      
+      // Reset the scroll flag
+      setShouldScrollToNewQuestion(false);
+    }
+  }, [shouldScrollToNewQuestion, newRubric.questions.length]);
 
   // Fetch rubrics from the API
   const fetchRubrics = async () => {
@@ -239,9 +272,9 @@ export default function RubricsPage() {
 
   // Handle question input changes
   const handleQuestionChange = (index: number, value: string) => {
-    // Limit each question to 200 characters
-    if (value.length > 200) {
-      alert(`Questions are limited to 200 characters. This question has ${value.length} characters.`);
+    // Limit each question to 500 characters
+    if (value.length > MAX_CHARACTERS_PER_QUESTION) {
+      alert(`Questions are limited to ${MAX_CHARACTERS_PER_QUESTION} characters. This question has ${value.length} characters.`);
       return;
     }
     
@@ -276,6 +309,15 @@ export default function RubricsPage() {
         alert('Please fill in all existing questions before adding a new one.');
         return prev;
       }
+      
+      // Check if we've reached the maximum number of questions
+      if (prev.questions.length >= MAX_QUESTIONS_PER_RUBRIC) {
+        alert(`You can only add up to ${MAX_QUESTIONS_PER_RUBRIC} questions per rubric.`);
+        return prev;
+      }
+      
+      // Set flag to scroll to new question after state update
+      setShouldScrollToNewQuestion(true);
       
       return {
         ...prev,
@@ -388,6 +430,7 @@ export default function RubricsPage() {
     setIsCreateModalOpen(false);
     setSelectedRubric(null);
     setIsEditing(false);
+    setShouldScrollToNewQuestion(false); // Reset scroll flag
   };
 
   // Move to next step in creation flow
@@ -546,7 +589,7 @@ export default function RubricsPage() {
             <input
               type="text"
               placeholder="Search rubrics..."
-              className="search-input pl-10 pr-4 py-2 w-full border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="search-input pl-10 pr-4 py-2 w-full border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:italic placeholder:text-gray-400 dark:placeholder:text-gray-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               data-theme={theme}
@@ -895,7 +938,7 @@ export default function RubricsPage() {
                     </label>
                     <input
                       type="text"
-                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:italic placeholder:text-gray-400 dark:placeholder:text-gray-500"
                       placeholder="e.g., Essay Writing Rubric"
                       value={newRubric.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
@@ -930,7 +973,7 @@ export default function RubricsPage() {
                     </label>
                     <input
                       type="text"
-                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:italic placeholder:text-gray-400 dark:placeholder:text-gray-500"
                       placeholder="e.g., English, Computer Science"
                       value={newRubric.course}
                       onChange={(e) => handleInputChange('course', e.target.value)}
@@ -942,7 +985,7 @@ export default function RubricsPage() {
                     </label>
                     <input
                       type="text"
-                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="form-input w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:italic placeholder:text-gray-400 dark:placeholder:text-gray-500"
                       placeholder="e.g., Essay Writing, Algorithms"
                       value={newRubric.specialization}
                       onChange={(e) => handleInputChange('specialization', e.target.value)}
@@ -957,9 +1000,9 @@ export default function RubricsPage() {
                   <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                     Add questions or criteria for your rubric. These will be used to evaluate assignments.
                   </p>
-                  <div className="max-h-[300px] overflow-y-auto pr-2">
+                  <div ref={questionsContainerRef} className="max-h-[300px] overflow-y-auto pr-2">
                     {newRubric.questions.map((question, index) => (
-                      <div key={index} className="mb-4 flex items-start">
+                      <div key={index} data-question-index={index} className="mb-4 flex items-start">
                         <div className="flex-grow">
                           <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Question/Criteria {index + 1}
@@ -967,15 +1010,15 @@ export default function RubricsPage() {
                           <div className="flex space-x-2">
                             <div className="flex-grow">
                               <textarea
-                                className="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                className="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:italic placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                 placeholder="e.g., How well does the essay address the prompt?"
                                 rows={2}
                                 value={question}
                                 onChange={(e) => handleQuestionChange(index, e.target.value)}
-                                maxLength={200}
+                                maxLength={MAX_CHARACTERS_PER_QUESTION}
                               />
                               <div className="text-xs text-gray-500 mt-1 text-right">
-                                {question.length}/200 characters
+                                {question.length}/{MAX_CHARACTERS_PER_QUESTION} characters
                               </div>
                             </div>
                             <div className="w-24">
@@ -1009,11 +1052,26 @@ export default function RubricsPage() {
                     ))}
                   </div>
                   <button
-                    className="text-indigo-600 hover:text-indigo-800 flex items-center text-sm mb-4 transition-colors"
+                    className={`flex items-center text-sm mb-4 transition-colors ${
+                      newRubric.questions.length >= MAX_QUESTIONS_PER_RUBRIC 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-indigo-600 hover:text-indigo-800'
+                    }`}
                     onClick={addQuestion}
+                    disabled={newRubric.questions.length >= MAX_QUESTIONS_PER_RUBRIC}
+                    title={
+                      newRubric.questions.length >= MAX_QUESTIONS_PER_RUBRIC 
+                        ? `Maximum of ${MAX_QUESTIONS_PER_RUBRIC} questions allowed`
+                        : 'Add another question'
+                    }
                   >
                     <Plus size={16} className="mr-1" />
                     Add Another Question
+                    {newRubric.questions.length >= MAX_QUESTIONS_PER_RUBRIC && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        (Max {MAX_QUESTIONS_PER_RUBRIC} reached)
+                      </span>
+                    )}
                   </button>
                 </div>
               )}

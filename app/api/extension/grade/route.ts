@@ -132,9 +132,9 @@ export async function POST(request: NextRequest) {
         temperature: 0.1,
         modelName: "gpt-4o",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: `Failed to initialize AI model: ${error?.message || 'Unknown error'}` },
+        { error: `Failed to initialize AI model: ${error instanceof Error ? error.message : 'Unknown error'}` },
         { 
           status: 500,
           headers: {
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
         userId,
         fileKey: virtualFileKey
       });
-    } catch (ragError: any) {
+    } catch (ragError: unknown) {
       console.error('[Extension API] RAG processing failed:', ragError);
       // Continue without RAG processing if it fails
     }
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
     if (rubricQuestions.length > 0) {
       console.log('[Extension API] Processing individual questions from rubric');
       
-      let questionResponses = [];
+      const questionResponses: string[] = [];
       
       // Process each question with its own context
       for (let i = 0; i < rubricQuestions.length; i++) {
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
           try {
             response = await model.invoke(formattedPrompt);
             break; // Success, exit the loop
-          } catch (error: any) {
+          } catch (error: unknown) {
             retries++;
             console.error(`[Extension API] Error calling AI (attempt ${retries}/${maxRetries}):`, error);
             
@@ -334,14 +334,14 @@ export async function POST(request: NextRequest) {
         try {
           response = await model.invoke(formattedPrompt);
           break; // Success, exit the loop
-        } catch (error: any) {
+        } catch (error: unknown) {
           retries++;
           console.error(`[Extension API] Error calling AI (attempt ${retries}/${maxRetries}):`, error);
           
           if (retries >= maxRetries) {
             // All retries failed
             return NextResponse.json(
-              { error: `Failed to grade submission after ${maxRetries} attempts: ${error.message}` },
+              { error: `Failed to grade submission after ${maxRetries} attempts: ${error instanceof Error ? error.message : 'Unknown error'}` },
               { 
                 status: 500,
                 headers: {
@@ -403,10 +403,10 @@ export async function POST(request: NextRequest) {
         }
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Extension API] Extension grading error:', error);
     return NextResponse.json(
-      { error: `Grading failed: ${error.message}` },
+      { error: `Grading failed: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { 
         status: 500,
         headers: {

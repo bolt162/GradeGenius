@@ -1,6 +1,11 @@
+// Single Rubric Files
+
 import { NextResponse, NextRequest } from 'next/server';
 import { getRubric, updateRubric, deleteRubric } from '@/app/lib/s3';
 import { getAuthFromCookies } from '@/app/lib/auth-utils';
+
+const MAX_QUESTIONS_PER_RUBRIC = 20;
+const MAX_CHARACTERS_PER_QUESTION = 500;
 
 // GET /api/rubrics/[rubricKey] - Get a specific rubric
 export async function GET(
@@ -102,18 +107,18 @@ export async function PUT(
       );
     }
     
-    // Validate number of questions doesn't exceed 10
-    if (rubricData.questions && rubricData.questions.length > 10) {
+    // Validate number of questions doesn't exceed 20
+    if (rubricData.questions && rubricData.questions.length > MAX_QUESTIONS_PER_RUBRIC) {
       return NextResponse.json(
-        { error: 'Rubrics can have at most 10 questions' },
+        { error: `Rubrics can have at most ${MAX_QUESTIONS_PER_RUBRIC} questions` },
         { status: 400 }
       );
     }
     
-    // Validate each question is 200 characters or less
-    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > 200)) {
+    // Validate each question is 500 characters or less
+    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > MAX_CHARACTERS_PER_QUESTION)) {
       return NextResponse.json(
-        { error: 'Each question must be 200 characters or less' },
+        { error: `Each question must be ${MAX_CHARACTERS_PER_QUESTION} characters or less` },
         { status: 400 }
       );
     }

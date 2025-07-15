@@ -1,32 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { 
   BarChart3, 
-  BookOpen, 
-  Calendar, 
   ChevronDown, 
-  ClipboardCheck, 
-  Clock, 
   FileText, 
-  Home, 
-  Mail, 
   Menu, 
-  MessageSquare, 
   Settings, 
-  Users, 
-  X, 
-  CheckCircle,
   HelpCircle,
   LayoutDashboard,
-  Percent,
-  User,
   LogOut,
-  Upload,
   Coins,
   ClipboardList
 } from 'lucide-react';
@@ -72,6 +59,18 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
     }
   }, []);
 
+  // Extra validation - check if cookies exist
+  const checkCookies = useCallback(() => {
+    // Check for session cookies
+    const hasCookies = document.cookie.includes('__session') || 
+                      document.cookie.includes('__clerk_db_jwt');
+    
+    if (!hasCookies) {
+      console.log('No auth cookies found, redirecting to login');
+      router.push('/login?forceSignOut=true');
+    }
+  }, [router]);
+
   // Check authentication on load
   useEffect(() => {
     if (isLoaded) {
@@ -87,19 +86,7 @@ export default function Layout({ children, activePage = 'dashboard' }: LayoutPro
       
       setIsAuthChecked(true);
     }
-  }, [isLoaded, isSignedIn, router]);
-  
-  // Extra validation - check if cookies exist
-  const checkCookies = () => {
-    // Check for session cookies
-    const hasCookies = document.cookie.includes('__session') || 
-                      document.cookie.includes('__clerk_db_jwt');
-    
-    if (!hasCookies) {
-      console.log('No auth cookies found, redirecting to login');
-      router.push('/login?forceSignOut=true');
-    }
-  };
+  }, [isLoaded, isSignedIn, router, checkCookies]);
 
   // Toggle sidebar
   const toggleSidebar = () => {
