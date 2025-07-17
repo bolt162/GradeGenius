@@ -1,11 +1,6 @@
-// Single Rubric Files
-
 import { NextResponse, NextRequest } from 'next/server';
 import { getRubric, updateRubric, deleteRubric } from '@/app/lib/s3';
 import { getAuthFromCookies } from '@/app/lib/auth-utils';
-
-const MAX_QUESTIONS_PER_RUBRIC = 20;
-const MAX_CHARACTERS_PER_QUESTION = 500;
 
 // GET /api/rubrics/[rubricKey] - Get a specific rubric
 export async function GET(
@@ -107,20 +102,50 @@ export async function PUT(
       );
     }
     
-    // Validate number of questions doesn't exceed 20
-    if (rubricData.questions && rubricData.questions.length > MAX_QUESTIONS_PER_RUBRIC) {
+    // Validate number of questions doesn't exceed 10
+    if (rubricData.questions && rubricData.questions.length > 10) {
       return NextResponse.json(
-        { error: `Rubrics can have at most ${MAX_QUESTIONS_PER_RUBRIC} questions` },
+        { error: 'Rubrics can have at most 10 questions' },
         { status: 400 }
       );
     }
     
-    // Validate each question is 500 characters or less
-    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > MAX_CHARACTERS_PER_QUESTION)) {
+    // Validate each question is 200 characters or less
+    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > 200)) {
       return NextResponse.json(
-        { error: `Each question must be ${MAX_CHARACTERS_PER_QUESTION} characters or less` },
+        { error: 'Each question must be 200 characters or less' },
         { status: 400 }
       );
+    }
+
+    // Validate partial credit fields
+    if (rubricData.partialCreditEnabled && rubricData.partialCreditCriteria) {
+      // Check that partial credit arrays match question length
+      if (rubricData.partialCreditEnabled.length !== rubricData.questions.length ||
+          rubricData.partialCreditCriteria.length !== rubricData.questions.length) {
+        return NextResponse.json(
+          { error: 'Partial credit arrays must match the number of questions' },
+          { status: 400 }
+        );
+      }
+
+      // Validate partial credit criteria when enabled
+      for (let i = 0; i < rubricData.partialCreditEnabled.length; i++) {
+        if (rubricData.partialCreditEnabled[i] && (!rubricData.partialCreditCriteria[i] || !rubricData.partialCreditCriteria[i].trim())) {
+          return NextResponse.json(
+            { error: `Partial credit criteria is required for question ${i + 1} when partial credit is enabled` },
+            { status: 400 }
+          );
+        }
+        
+        // Validate partial credit criteria length
+        if (rubricData.partialCreditCriteria[i] && rubricData.partialCreditCriteria[i].length > 200) {
+          return NextResponse.json(
+            { error: `Partial credit criteria for question ${i + 1} must be 200 characters or less` },
+            { status: 400 }
+          );
+        }
+      }
     }
     
     console.log('Processing rubric update with data:', {

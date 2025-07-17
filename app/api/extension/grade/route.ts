@@ -132,9 +132,9 @@ export async function POST(request: NextRequest) {
         temperature: 0.1,
         modelName: "gpt-4o",
       });
-    } catch (error: unknown) {
+    } catch (error: any) {
       return NextResponse.json(
-        { error: `Failed to initialize AI model: ${error instanceof Error ? error.message : 'Unknown error'}` },
+        { error: `Failed to initialize AI model: ${error?.message || 'Unknown error'}` },
         { 
           status: 500,
           headers: {
@@ -157,6 +157,8 @@ export async function POST(request: NextRequest) {
     
     // Get rubric details from the selected rubric key (mandatory)
     let rubricQuestions: string[] = [];
+    let partialCreditEnabled: boolean[] = [];
+    let partialCreditCriteria: string[] = [];
     let courseInfo = { course: "", specialization: "", classLevel: "" };
     
     try {
@@ -178,6 +180,8 @@ export async function POST(request: NextRequest) {
       // Extract rubric questions from questions array
       if (rubricData.questions && Array.isArray(rubricData.questions) && rubricData.questions.length > 0) {
         rubricQuestions = rubricData.questions;
+        partialCreditEnabled = rubricData.partialCreditEnabled || rubricQuestions.map(() => false);
+        partialCreditCriteria = rubricData.partialCreditCriteria || rubricQuestions.map(() => '');
         
         // Extract course information from the rubric if available
         courseInfo = {
@@ -232,7 +236,7 @@ export async function POST(request: NextRequest) {
         userId,
         fileKey: virtualFileKey
       });
-    } catch (ragError: unknown) {
+    } catch (ragError: any) {
       console.error('[Extension API] RAG processing failed:', ragError);
       // Continue without RAG processing if it fails
     }
@@ -243,7 +247,7 @@ export async function POST(request: NextRequest) {
     if (rubricQuestions.length > 0) {
       console.log('[Extension API] Processing individual questions from rubric');
       
-      const questionResponses: string[] = [];
+      let questionResponses = [];
       
       // Process each question with its own context
       for (let i = 0; i < rubricQuestions.length; i++) {
@@ -276,8 +280,9 @@ export async function POST(request: NextRequest) {
           classLevel: courseInfo.classLevel || "Not specified",
           question: question,
           weight: 10, // Default weight of 10 points
-          context: questionContext ? JSON.stringify(questionContext.chunks) : studentWork,
-          rubric: ""  // Empty since the question already has the rubric criteria
+          partialCreditEnabled: partialCreditEnabled[i] ? "Yes" : "No",
+          partialCreditCriteria: partialCreditEnabled[i] ? (partialCreditCriteria[i] || "No specific criteria provided") : "Not applicable",
+          context: questionContext ? JSON.stringify(questionContext.chunks) : studentWork
         });
         
         console.log(`[Extension API] Sending prompt for question ${i+1} to AI model`);
@@ -291,7 +296,7 @@ export async function POST(request: NextRequest) {
           try {
             response = await model.invoke(formattedPrompt);
             break; // Success, exit the loop
-          } catch (error: unknown) {
+          } catch (error: any) {
             retries++;
             console.error(`[Extension API] Error calling AI (attempt ${retries}/${maxRetries}):`, error);
             
@@ -334,14 +339,14 @@ export async function POST(request: NextRequest) {
         try {
           response = await model.invoke(formattedPrompt);
           break; // Success, exit the loop
-        } catch (error: unknown) {
+        } catch (error: any) {
           retries++;
           console.error(`[Extension API] Error calling AI (attempt ${retries}/${maxRetries}):`, error);
           
           if (retries >= maxRetries) {
             // All retries failed
             return NextResponse.json(
-              { error: `Failed to grade submission after ${maxRetries} attempts: ${error instanceof Error ? error.message : 'Unknown error'}` },
+              { error: `Failed to grade submission after ${maxRetries} attempts: ${error.message}` },
               { 
                 status: 500,
                 headers: {
@@ -403,10 +408,10 @@ export async function POST(request: NextRequest) {
         }
       }
     );
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('[Extension API] Extension grading error:', error);
     return NextResponse.json(
-      { error: `Grading failed: ${error instanceof Error ? error.message : 'Unknown error'}` },
+      { error: `Grading failed: ${error.message}` },
       { 
         status: 500,
         headers: {

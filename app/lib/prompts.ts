@@ -104,6 +104,12 @@ GRADING QUESTION:
 QUESTION WEIGHT:
 {weight} points
 
+PARTIAL CREDIT ENABLED:
+{partialCreditEnabled}
+
+PARTIAL CREDIT CRITERIA:
+{partialCreditCriteria}
+
 RELEVANT CONTEXT:
 {context}
 
@@ -111,7 +117,10 @@ INSTRUCTIONS:
 1. Evaluate ONLY the specific aspect mentioned in the question.
 2. Provide detailed assessment focused solely on this criteria.
 3. Include specific examples from the context that relate to this question.
-4. Provide a score or evaluation for this specific aspect (out of {weight} points).
+4. For scoring:
+   - If partial credit is ENABLED: Use the partial credit criteria to award appropriate points between 0 and {weight}
+   - If partial credit is DISABLED: Award either full points ({weight}) or zero points (0) based on whether the criteria is met
+   - Always justify your scoring decision clearly
 
 FORMAT YOUR RESPONSE AS FOLLOWS:
 # Assessment
@@ -121,5 +130,5 @@ FORMAT YOUR RESPONSE AS FOLLOWS:
 [Specific quotes or examples from the context that support your assessment]
 
 # Score for this Aspect
-[Score] /{weight} - [Brief justification]
+[Score] /{weight} - [Brief justification including partial credit rationale if applicable]
 `; 

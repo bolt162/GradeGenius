@@ -190,6 +190,8 @@ export async function POST(request: NextRequest) {
     let rubricDetails = null;
     let rubricQuestions: string[] = [];
     let rubricWeights: number[] = [];
+    let partialCreditEnabled: boolean[] = [];
+    let partialCreditCriteria: string[] = [];
     let courseInfo = { course: "", specialization: "", classLevel: "" };
     
     // If we have a selected rubric key, fetch the rubric details
@@ -200,6 +202,8 @@ export async function POST(request: NextRequest) {
           rubricDetails = rubricData;
           rubricQuestions = rubricData.questions || [];
           rubricWeights = rubricData.questionWeights || rubricQuestions.map(() => 10);
+          partialCreditEnabled = rubricData.partialCreditEnabled || rubricQuestions.map(() => false);
+          partialCreditCriteria = rubricData.partialCreditCriteria || rubricQuestions.map(() => '');
           
           // Extract course information
           courseInfo = {
@@ -272,6 +276,8 @@ export async function POST(request: NextRequest) {
             classLevel: courseInfo.classLevel || "General",
             question: question,
             weight: rubricWeights[i] || 10,
+            partialCreditEnabled: partialCreditEnabled[i] ? "Yes" : "No",
+            partialCreditCriteria: partialCreditEnabled[i] ? (partialCreditCriteria[i] || "No specific criteria provided") : "Not applicable",
             context: questionContext ? JSON.stringify(questionContext.chunks.map(chunk => chunk.content)) : "No additional context available."
           });
           
