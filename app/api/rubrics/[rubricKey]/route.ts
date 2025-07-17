@@ -1,6 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getRubric, updateRubric, deleteRubric } from '@/app/lib/s3';
+import { getRubric, storeRubric, deleteRubric } from '@/app/lib/s3';
 import { getAuthFromCookies } from '@/app/lib/auth-utils';
+
+// Import constants from the main route file
+const MAX_QUESTIONS_PER_RUBRIC = 20;
+const MAX_CHARACTERS_PER_QUESTION = 500;
 
 // GET /api/rubrics/[rubricKey] - Get a specific rubric
 export async function GET(
@@ -17,8 +21,7 @@ export async function GET(
       );
     }
     
-    // Safely extract the rubricKey from params
-    // Using the Promise.resolve approach to avoid Next.js "params should be awaited" error
+    // Safely extract the rubricKey from params using Promise.resolve
     const rubricKeyPromise = Promise.resolve(params).then(p => 
       typeof p === 'object' && p !== null && 'rubricKey' in p
         ? (p as { rubricKey: string }).rubricKey
@@ -48,10 +51,10 @@ export async function GET(
     }
     
     return NextResponse.json({ rubric });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error getting rubric:', error);
     return NextResponse.json(
-      { error: `Failed to fetch rubric: ${error.message}` },
+      { error: `Failed to fetch rubric: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }
@@ -102,18 +105,18 @@ export async function PUT(
       );
     }
     
-    // Validate number of questions doesn't exceed 10
-    if (rubricData.questions && rubricData.questions.length > 10) {
+    // Validate number of questions doesn't exceed maximum
+    if (rubricData.questions && rubricData.questions.length > MAX_QUESTIONS_PER_RUBRIC) {
       return NextResponse.json(
-        { error: 'Rubrics can have at most 10 questions' },
+        { error: `Rubrics can have at most ${MAX_QUESTIONS_PER_RUBRIC} questions` },
         { status: 400 }
       );
     }
     
-    // Validate each question is 200 characters or less
-    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > 200)) {
+    // Validate each question is within character limit
+    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > MAX_CHARACTERS_PER_QUESTION)) {
       return NextResponse.json(
-        { error: 'Each question must be 200 characters or less' },
+        { error: `Each question must be ${MAX_CHARACTERS_PER_QUESTION} characters or less` },
         { status: 400 }
       );
     }
@@ -139,9 +142,9 @@ export async function PUT(
         }
         
         // Validate partial credit criteria length
-        if (rubricData.partialCreditCriteria[i] && rubricData.partialCreditCriteria[i].length > 200) {
+        if (rubricData.partialCreditCriteria[i] && rubricData.partialCreditCriteria[i].length > MAX_CHARACTERS_PER_QUESTION) {
           return NextResponse.json(
-            { error: `Partial credit criteria for question ${i + 1} must be 200 characters or less` },
+            { error: `Partial credit criteria for question ${i + 1} must be ${MAX_CHARACTERS_PER_QUESTION} characters or less` },
             { status: 400 }
           );
         }
@@ -161,39 +164,40 @@ export async function PUT(
     
     // Handle the case where the name has changed
     let result;
-    
-    // If the name has changed, we need to create a new file and delete the old one
-    if (originalName && originalName !== rubricData.name) {
-      console.log(`Rubric name changed from "${originalName}" to "${rubricData.name}"`);
+    if (originalName !== rubricData.name) {
+      console.log('Rubric name changed, need to handle key update');
       
-      // Create a new rubric with the new name
-      result = await updateRubric(decodedKey, userId, dataToSave, username);
-      
-      // Delete the old rubric file if it exists and has a different key
-      if (result.key !== decodedKey) {
-        try {
-          console.log(`Deleting old rubric file: ${decodedKey}`);
-          await deleteRubric(decodedKey, userId, username);
-          console.log(`Successfully deleted old rubric: ${decodedKey}`);
-        } catch (deleteError) {
-          console.error(`Error deleting old rubric ${decodedKey}:`, deleteError);
-          // Continue even if delete fails, as the update succeeded
-        }
+      // If the name changed, we need to:
+      // 1. Store with the new key (based on new name)
+      // 2. Delete the old rubric
+      try {
+        // Store the new rubric
+        result = await storeRubric(userId, rubricData.name, dataToSave, username);
+        
+        // Delete the old rubric only if the new one was successfully stored
+        // Use the original key from the request body if available, otherwise use the URL key
+        const keyToDelete = originalKey || decodedKey;
+        await deleteRubric(keyToDelete, userId, username);
+        
+        console.log('Successfully updated rubric with name change');
+      } catch (error) {
+        console.error('Error updating rubric with name change:', error);
+        throw error;
       }
     } else {
-      // Standard update without name change
-      console.log('Standard update without name change');
-      result = await updateRubric(decodedKey, userId, dataToSave, username);
+      // Name didn't change, just update in place
+      result = await storeRubric(userId, rubricData.name, dataToSave, username);
+      console.log('Successfully updated rubric without name change');
     }
     
     return NextResponse.json({ 
       success: true,
       rubric: result
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating rubric:', error);
     return NextResponse.json(
-      { error: `Failed to update rubric: ${error.message}` },
+      { error: `Failed to update rubric: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }
@@ -240,10 +244,10 @@ export async function DELETE(
       success: true,
       message: 'Rubric deleted successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting rubric:', error);
     return NextResponse.json(
-      { error: `Failed to delete rubric: ${error.message}` },
+      { error: `Failed to delete rubric: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

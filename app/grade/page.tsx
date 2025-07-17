@@ -1,15 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { FileText, Send, Loader2, ChevronLeft, Upload, AlertCircle, CheckCircle, Edit3, ArrowUp, Download, Coins, CreditCard } from 'lucide-react';
+import { FileText, Send, Loader2, ChevronLeft, Upload, AlertCircle, CheckCircle, Edit3, Download, Coins, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import Layout from '../components/Layout';
 import { Tab } from '@headlessui/react';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+
 import { useTheme } from '../context/ThemeContext';
 
 // Loading component for Suspense fallback
@@ -29,7 +28,6 @@ function GradePageLoading() {
 
 // Main component that uses useSearchParams
 function GradePageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const fileKeyParam = searchParams.get('fileKey');
   const { user, isLoaded } = useUser();
@@ -53,7 +51,6 @@ function GradePageContent() {
   const [tokenInfo, setTokenInfo] = useState<{ tokensNeeded: number; tokensAvailable: number; } | null>(null);
   const [showTokenWarning, setShowTokenWarning] = useState(false);
   const [userRubrics, setUserRubrics] = useState<Array<{key: string, name: string}>>([]);
-  const [isLoadingRubrics, setIsLoadingRubrics] = useState(false);
   const [selectedRubricKey, setSelectedRubricKey] = useState<string>('');
   const [selectedRubricDetails, setSelectedRubricDetails] = useState<{
     name: string;
@@ -62,6 +59,20 @@ function GradePageContent() {
     partialCreditCriteria?: string[];
   } | null>(null);
   const [gradingStage, setGradingStage] = useState<'idle' | 'rubric' | 'reading' | 'grading'>('idle');
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
+
+  // Helper function to toggle question expansion
+  const toggleQuestionExpansion = (questionIndex: number) => {
+    setExpandedQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionIndex)) {
+        newSet.delete(questionIndex);
+      } else {
+        newSet.add(questionIndex);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     if (isLoaded && user && fileKeyParam) {
@@ -104,15 +115,15 @@ function GradePageContent() {
               // Don't throw here, we'll show the file download link instead
               setError(`Couldn't load file content (${contentResponse.status}). You can still grade it.`);
             }
-          } catch (_error) {
-            // Continue execution, we'll show the file download link
-            setError("Couldn't load file content. You can still grade it.");
-          }
+                      } catch {
+              // Continue execution, we'll show the file download link
+              setError("Couldn't load file content. You can still grade it.");
+            }
         }
       } else {
         throw new Error('Invalid response from server');
       }
-    } catch (_error) {
+    } catch {
       setError('Failed to load file details. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -122,7 +133,6 @@ function GradePageContent() {
   const fetchUserRubrics = async () => {
     if (!user) return;
     
-    setIsLoadingRubrics(true);
     try {
       const response = await fetch('/api/rubrics');
       if (!response.ok) {
@@ -133,8 +143,6 @@ function GradePageContent() {
       setUserRubrics(data.rubrics || []);
     } catch (error) {
       console.error('Error fetching rubrics:', error);
-    } finally {
-      setIsLoadingRubrics(false);
     }
   };
 
@@ -499,13 +507,39 @@ function GradePageContent() {
     const hasMultipleQuestions = sections.length > 1;
     
     // Extract numeric scores from the text (look for patterns like "Score: 8/10" or "Grade: 85%")
-    const scoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*%)/gi;
+    const scoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*%)/gi;
     
     let totalScore = 0;
     let totalPossible = 0;
     let scoreCount = 0;
     
-    // Function to extract scores from a single section
+    // Function to extract score from a single section
+    const extractSectionScore = (content: string) => {
+      const sectionScoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*%)/gi;
+      let sectionScore = 0;
+      let sectionPossible = 0;
+      let matches;
+      
+      while ((matches = sectionScoreRegex.exec(content)) !== null) {
+        if (matches[1] && matches[2]) {
+          sectionScore = Number(matches[1]);
+          sectionPossible = Number(matches[2]);
+          break;
+        } else if (matches[3] && matches[4]) {
+          sectionScore = Number(matches[3]);
+          sectionPossible = Number(matches[4]);
+          break;
+        } else if (matches[5]) {
+          sectionScore = Number(matches[5]);
+          sectionPossible = 100;
+          break;
+        }
+      }
+      
+      return { score: sectionScore, possible: sectionPossible };
+    };
+    
+    // Function to extract scores from all sections for total calculation
     const extractScores = (content: string) => {
       let matches;
       while ((matches = scoreRegex.exec(content)) !== null) {
@@ -530,19 +564,42 @@ function GradePageContent() {
       }
     };
     
-    // Extract scores from each section
+    // Parse and categorize sections by score
+    let sortedSections = [];
     if (hasMultipleQuestions) {
-      sections.forEach(section => extractScores(section));
+      // Parse each section with its score
+      const sectionsWithScores = sections.map((section, index) => {
+        const { score, possible } = extractSectionScore(section);
+        return { section, index, score, possible };
+      });
+      
+      // Calculate total score from all sections
+      sectionsWithScores.forEach(({ score, possible }) => {
+        totalScore += score;
+        totalPossible += possible;
+        scoreCount++;
+      });
+      
+      // Categorize sections
+      const incorrectSections = sectionsWithScores.filter(({ score }) => score === 0);
+      const partialCreditSections = sectionsWithScores.filter(({ score, possible }) => score > 0 && score < possible);
+      const fullCreditSections = sectionsWithScores.filter(({ score, possible }) => score === possible && score > 0);
+      
+      // Sort sections: incorrect first, then partial credit, then full credit
+      sortedSections = [...incorrectSections, ...partialCreditSections, ...fullCreditSections];
     } else {
       extractScores(text);
+      // For single question, just use the original section
+      const { score, possible } = extractSectionScore(text);
+      sortedSections = [{ section: text, index: 0, score, possible }];
     }
     
     // Calculate overall score
     let overallScore = '';
     if (scoreCount > 0) {
       if (totalPossible > 0) {
-        // Show raw score instead of percentage
-        overallScore = `${totalScore} / ${totalPossible}`;
+        // Always show as percentage out of 100
+        overallScore = `${totalScore} out of ${totalPossible}`;
       }
     }
 
@@ -597,43 +654,159 @@ function GradePageContent() {
         )}
         
         {hasMultipleQuestions ? (
-          sections.map((section, index) => (
-            <div key={index} className={index > 0 ? `mt-8 pt-8 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'}` : ""}>
-              <div className={`${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-100'} px-4 py-3 rounded-lg mb-4`}>
-                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
-                  Question {index + 1}
-                </h3>
-                {selectedRubricDetails && selectedRubricDetails.questions && selectedRubricDetails.questions[index] && (
-                  <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald whitespace-pre-wrap`}>
-                    {selectedRubricDetails.questions[index]}
-                  </p>
+          sortedSections.map((sectionData, displayIndex) => {
+            const { section, index: originalIndex, score, possible } = sectionData;
+            
+            // Determine score category for visual indicators
+            let scoreCategory = 'full';
+            let categoryIcon = '✓';
+            let categoryText = 'Full Credit';
+            
+            if (score === 0) {
+              scoreCategory = 'incorrect';
+              categoryIcon = '✗';
+              categoryText = 'Incorrect';
+            } else if (score > 0 && score < possible) {
+              scoreCategory = 'partial';
+              categoryIcon = '◐';
+              categoryText = 'Partial Credit';
+            }
+            
+            const isExpanded = expandedQuestions.has(originalIndex);
+            
+            return (
+              <div key={originalIndex} className={displayIndex > 0 ? `mt-8 pt-8 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'}` : ""}>
+                <div 
+                  className={`${theme === 'dark' ? 'bg-gray-900/50 hover:bg-gray-900/70' : 'bg-gray-100 hover:bg-gray-200'} px-4 py-3 rounded-lg mb-4 cursor-pointer transition-colors`}
+                  onClick={() => toggleQuestionExpansion(originalIndex)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center space-x-2">
+                      <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} font-oswald`}>
+                        Question {originalIndex + 1}
+                      </h3>
+                      {isExpanded ? (
+                        <ChevronUp className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                      ) : (
+                        <ChevronDown className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm px-2 py-1 rounded-full text-white font-oswald ${
+                        scoreCategory === 'incorrect' ? 'bg-red-500' :
+                        scoreCategory === 'partial' ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`}>
+                        {categoryIcon} {categoryText}
+                      </span>
+                      {possible > 0 && (
+                        <span className={`text-lg font-bold font-oswald ${
+                          scoreCategory === 'incorrect' ? 'text-red-600 dark:text-red-500' :
+                          scoreCategory === 'partial' ? 'text-yellow-600 dark:text-yellow-500' :
+                          'text-green-600 dark:text-green-500'
+                        }`}>
+                          {score}/{possible}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {selectedRubricDetails && selectedRubricDetails.questions && selectedRubricDetails.questions[originalIndex] && (
+                    <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
+                      {selectedRubricDetails.questions[originalIndex]}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Collapsible content */}
+                {isExpanded && (
+                  <div className="mb-4">
+                    {/* @ts-expect-error - Required for ReactMarkdown components */}
+                    <ReactMarkdown components={components}>
+                      {section}
+                    </ReactMarkdown>
+                  </div>
                 )}
               </div>
-              
-              {/* @ts-expect-error - Required for ReactMarkdown components */}
-              <ReactMarkdown components={components}>
-                {section}
-              </ReactMarkdown>
-            </div>
-          ))
+            );
+          })
         ) : (
           <>
-            {/* Display the rubric question even for a single question */}
-            {rubric && (
-              <div className={`${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-100'} px-4 py-3 rounded-lg mb-4`}>
-                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mb-1 font-oswald`}>
-                  Question
-                </h3>
-                <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald whitespace-pre-wrap`}>
-                  {rubric}
-                </p>
-              </div>
-            )}
-            
-            {/* @ts-expect-error - Required for ReactMarkdown components */}
-            <ReactMarkdown components={components}>
-              {text}
-            </ReactMarkdown>
+            {/* Single question - make it collapsible too */}
+            {sortedSections.length > 0 && (() => {
+              const sectionData = sortedSections[0];
+              const { section, score, possible } = sectionData;
+              const isExpanded = expandedQuestions.has(0);
+              
+              // Determine score category for visual indicators
+              let scoreCategory = 'full';
+              let categoryIcon = '✓';
+              let categoryText = 'Full Credit';
+              
+              if (score === 0) {
+                scoreCategory = 'incorrect';
+                categoryIcon = '✗';
+                categoryText = 'Incorrect';
+              } else if (score > 0 && score < possible) {
+                scoreCategory = 'partial';
+                categoryIcon = '◐';
+                categoryText = 'Partial Credit';
+              }
+              
+              return (
+                <div>
+                  <div 
+                    className={`${theme === 'dark' ? 'bg-gray-900/50 hover:bg-gray-900/70' : 'bg-gray-100 hover:bg-gray-200'} px-4 py-3 rounded-lg mb-4 cursor-pointer transition-colors`}
+                    onClick={() => toggleQuestionExpansion(0)}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} font-oswald`}>
+                          Question
+                        </h3>
+                        {isExpanded ? (
+                          <ChevronUp className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                        ) : (
+                          <ChevronDown className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-sm px-2 py-1 rounded-full text-white font-oswald ${
+                          scoreCategory === 'incorrect' ? 'bg-red-500' :
+                          scoreCategory === 'partial' ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}>
+                          {categoryIcon} {categoryText}
+                        </span>
+                        {possible > 0 && (
+                          <span className={`text-lg font-bold font-oswald ${
+                            scoreCategory === 'incorrect' ? 'text-red-600 dark:text-red-500' :
+                            scoreCategory === 'partial' ? 'text-yellow-600 dark:text-yellow-500' :
+                            'text-green-600 dark:text-green-500'
+                          }`}>
+                            {score}/{possible}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {selectedRubricDetails && selectedRubricDetails.questions && selectedRubricDetails.questions[0] && (
+                      <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} italic font-oswald`}>
+                        {selectedRubricDetails.questions[0]}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Collapsible content */}
+                  {isExpanded && (
+                    <div className="mb-4">
+                      {/* @ts-expect-error - Required for ReactMarkdown components */}
+                      <ReactMarkdown components={components}>
+                        {section}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </>
         )}
       </div>

@@ -4,6 +4,8 @@ import { getAuthFromCookies } from '@/app/lib/auth-utils';
 
 // Maximum number of rubrics allowed per user
 const MAX_RUBRICS_PER_USER = 20;
+const MAX_QUESTIONS_PER_RUBRIC = 20;
+const MAX_CHARACTERS_PER_QUESTION = 500;
 
 // GET /api/rubrics - Get all rubrics for the current user
 export async function GET() {
@@ -21,10 +23,10 @@ export async function GET() {
     const rubrics = await listUserRubrics(userId, username);
     
     return NextResponse.json({ rubrics });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error getting rubrics:', error);
     return NextResponse.json(
-      { error: `Failed to fetch rubrics: ${error.message}` },
+      { error: `Failed to fetch rubrics: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }
@@ -67,18 +69,18 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate number of questions doesn't exceed 10
-    if (rubricData.questions && rubricData.questions.length > 10) {
+    // Validate number of questions doesn't exceed maximum
+    if (rubricData.questions && rubricData.questions.length > MAX_QUESTIONS_PER_RUBRIC) {
       return NextResponse.json(
-        { error: 'Rubrics can have at most 10 questions' },
+        { error: `Rubrics can have at most ${MAX_QUESTIONS_PER_RUBRIC} questions` },
         { status: 400 }
       );
     }
     
-    // Validate each question is 200 characters or less
-    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > 200)) {
+    // Validate each question is within character limit
+    if (rubricData.questions && rubricData.questions.some((q: string) => q.length > MAX_CHARACTERS_PER_QUESTION)) {
       return NextResponse.json(
-        { error: 'Each question must be 200 characters or less' },
+        { error: `Each question must be ${MAX_CHARACTERS_PER_QUESTION} characters or less` },
         { status: 400 }
       );
     }
@@ -104,9 +106,9 @@ export async function POST(request: NextRequest) {
         }
         
         // Validate partial credit criteria length
-        if (rubricData.partialCreditCriteria[i] && rubricData.partialCreditCriteria[i].length > 200) {
+        if (rubricData.partialCreditCriteria[i] && rubricData.partialCreditCriteria[i].length > MAX_CHARACTERS_PER_QUESTION) {
           return NextResponse.json(
-            { error: `Partial credit criteria for question ${i + 1} must be 200 characters or less` },
+            { error: `Partial credit criteria for question ${i + 1} must be ${MAX_CHARACTERS_PER_QUESTION} characters or less` },
             { status: 400 }
           );
         }
@@ -120,10 +122,10 @@ export async function POST(request: NextRequest) {
       success: true,
       rubric: result
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating rubric:', error);
     return NextResponse.json(
-      { error: `Failed to create rubric: ${error.message}` },
+      { error: `Failed to create rubric: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

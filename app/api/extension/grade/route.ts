@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
     if (rubricQuestions.length > 0) {
       console.log('[Extension API] Processing individual questions from rubric');
       
-      let questionResponses = [];
+      const questionResponses = [];
       
       // Process each question with its own context
       for (let i = 0; i < rubricQuestions.length; i++) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { 
   ClipboardList, 
@@ -76,6 +76,10 @@ export default function RubricsPage() {
 
   // Theme detection
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Refs for scroll functionality
+  const questionsContainerRef = useRef<HTMLDivElement>(null);
+  const questionRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Load rubrics data from API
   useEffect(() => {
@@ -243,9 +247,9 @@ export default function RubricsPage() {
 
   // Handle question input changes
   const handleQuestionChange = (index: number, value: string) => {
-    // Limit each question to 200 characters
-    if (value.length > 200) {
-      alert(`Questions are limited to 200 characters. This question has ${value.length} characters.`);
+    // Limit each question to 500 characters
+    if (value.length > 500) {
+      alert(`Questions are limited to 500 characters. This question has ${value.length} characters.`);
       return;
     }
     
@@ -292,6 +296,43 @@ export default function RubricsPage() {
     }));
   };
 
+  // Optimized scroll to question function
+  const scrollToQuestion = useCallback((questionIndex: number) => {
+    // Use requestAnimationFrame for optimal performance
+    requestAnimationFrame(() => {
+      const questionElement = questionRefs.current[questionIndex];
+      const container = questionsContainerRef.current;
+      
+      if (questionElement && container) {
+        // Calculate the position to scroll to
+        const containerRect = container.getBoundingClientRect();
+        const questionRect = questionElement.getBoundingClientRect();
+        
+        // Check if element is already visible
+        const isVisible = 
+          questionRect.top >= containerRect.top && 
+          questionRect.bottom <= containerRect.bottom;
+        
+        if (!isVisible) {
+          // Scroll the element into view with smooth behavior
+          questionElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest'
+          });
+        }
+        
+        // Focus on the textarea for better UX
+        setTimeout(() => {
+          const textarea = questionElement.querySelector('textarea');
+          if (textarea) {
+            textarea.focus();
+          }
+        }, 300); // Wait for scroll animation to complete
+      }
+    });
+  }, []);
+
   // Add new question field
   const addQuestion = () => {
     setNewRubric(prev => {
@@ -303,13 +344,23 @@ export default function RubricsPage() {
         return prev;
       }
       
-      return {
+      const newQuestionIndex = prev.questions.length;
+      
+      // Update state first
+      const updatedState = {
         ...prev,
         questions: [...prev.questions, ''],
         questionWeights: [...(prev.questionWeights || Array(prev.questions.length).fill(10)), 10],
         partialCreditEnabled: [...(prev.partialCreditEnabled || Array(prev.questions.length).fill(false)), false],
         partialCreditCriteria: [...(prev.partialCreditCriteria || Array(prev.questions.length).fill('')), '']
       };
+      
+      // Scroll to the new question after state update
+      setTimeout(() => {
+        scrollToQuestion(newQuestionIndex);
+      }, 100); // Small delay to ensure DOM update
+      
+      return updatedState;
     });
   };
 
@@ -327,6 +378,21 @@ export default function RubricsPage() {
       
       const updatedPartialCreditCriteria = [...(prev.partialCreditCriteria || [])];
       updatedPartialCreditCriteria.splice(index, 1);
+      
+      // Clean up refs for removed questions to prevent memory leaks
+      const newRefs: { [key: number]: HTMLDivElement | null } = {};
+      Object.keys(questionRefs.current).forEach(key => {
+        const keyNum = parseInt(key);
+        if (keyNum < index) {
+          // Keep refs for questions before the removed one
+          newRefs[keyNum] = questionRefs.current[keyNum];
+        } else if (keyNum > index) {
+          // Shift refs for questions after the removed one
+          newRefs[keyNum - 1] = questionRefs.current[keyNum];
+        }
+        // Skip the removed question's ref (keyNum === index)
+      });
+      questionRefs.current = newRefs;
       
       return {
         ...prev,
@@ -437,6 +503,9 @@ export default function RubricsPage() {
     setIsCreateModalOpen(false);
     setSelectedRubric(null);
     setIsEditing(false);
+    
+    // Clean up all question refs when modal is closed
+    questionRefs.current = {};
   };
 
   // Move to next step in creation flow
@@ -1008,9 +1077,14 @@ export default function RubricsPage() {
                   <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                     Add questions or criteria for your rubric. These will be used to evaluate assignments.
                   </p>
-                  <div className="max-h-[300px] overflow-y-auto pr-2">
+                  <div ref={questionsContainerRef} className="max-h-[300px] overflow-y-auto pr-2">
                     {newRubric.questions.map((question, index) => (
-                      <div key={index} className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg" style={{ backgroundColor: 'var(--card-bg)' }}>
+                      <div 
+                        key={index} 
+                        ref={(el) => { questionRefs.current[index] = el; }}
+                        className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg" 
+                        style={{ backgroundColor: 'var(--card-bg)' }}
+                      >
                         <div className="flex items-start">
                           <div className="flex-grow">
                             <label className="form-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1019,15 +1093,15 @@ export default function RubricsPage() {
                             <div className="flex space-x-2 mb-3">
                               <div className="flex-grow">
                                 <textarea
-                                  className="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="question-textarea form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="e.g., How well does the essay address the prompt?"
                                   rows={2}
                                   value={question}
                                   onChange={(e) => handleQuestionChange(index, e.target.value)}
-                                  maxLength={200}
+                                  maxLength={500}
                                 />
                                 <div className="text-xs text-gray-500 mt-1 text-right">
-                                  {question.length}/200 characters
+                                  {question.length}/500 characters
                                 </div>
                               </div>
                               <div className="w-24">
@@ -1068,15 +1142,15 @@ export default function RubricsPage() {
                                     Partial Credit Criteria
                                   </label>
                                   <textarea
-                                    className="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="question-textarea form-textarea w-full px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     placeholder="e.g., Award 50% if student addresses prompt but lacks supporting evidence"
                                     rows={2}
                                     value={newRubric.partialCreditCriteria?.[index] || ''}
                                     onChange={(e) => handlePartialCreditCriteriaChange(index, e.target.value)}
-                                    maxLength={200}
+                                    maxLength={500}
                                   />
                                   <div className="text-xs text-gray-500 mt-1 text-right">
-                                    {(newRubric.partialCreditCriteria?.[index] || '').length}/200 characters
+                                    {(newRubric.partialCreditCriteria?.[index] || '').length}/500 characters
                                   </div>
                                 </div>
                               )}
@@ -1096,10 +1170,10 @@ export default function RubricsPage() {
                     ))}
                   </div>
                   <button
-                    className="text-indigo-600 hover:text-indigo-800 flex items-center text-sm mb-4 transition-colors"
+                    className="add-question-button flex items-center text-sm font-medium"
                     onClick={addQuestion}
                   >
-                    <Plus size={16} className="mr-1" />
+                    <Plus size={16} className="mr-2" />
                     Add Another Question
                   </button>
                 </div>

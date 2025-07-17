@@ -499,4 +499,43 @@ body, html, .rubrics-title, .rubrics-description, .form-label, .button, .button-
 
 .gap-4 {
   gap: 1rem;
+}
+
+/* Italic placeholder styling for question textareas */
+.question-textarea::placeholder {
+  font-style: italic;
+}
+
+/* Add Another Question button styling */
+.add-question-button {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 15px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Light mode button styling */
+[data-theme="light"] .add-question-button {
+  color: #4f46e5; /* indigo-600 */
+  background-color: transparent;
+  border: 1px solid #4f46e5;
+}
+
+[data-theme="light"] .add-question-button:hover {
+  color: #3730a3; /* indigo-800 */
+  border-color: #3730a3;
+  background-color: rgba(79, 70, 229, 0.05);
+}
+
+/* Dark mode button styling */
+[data-theme="dark"] .add-question-button {
+  color: #1f2937; /* gray-800 for text */
+  background-color: white;
+  border: 1px solid white;
+}
+
+[data-theme="dark"] .add-question-button:hover {
+  background-color: #f9fafb; /* gray-50 */
+  border-color: #f9fafb;
 } 
