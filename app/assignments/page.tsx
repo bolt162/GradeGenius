@@ -320,7 +320,7 @@ export default function AssignmentsPage() {
     const hasMultipleQuestions = sections.length > 1;
     
     // Extract numeric scores from the text (look for patterns like "Score: 8/10" or "Grade: 85%")
-    const scoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*%)/gi;
+    const scoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*%)/gi;
     
     let totalScore = 0;
     let totalPossible = 0;
@@ -328,7 +328,7 @@ export default function AssignmentsPage() {
     
     // Function to extract score from a single section
     const extractSectionScore = (content: string) => {
-      const sectionScoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(\d+)(?:\s*\/\s*|\s*out of\s*)(\d+)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+)(?:\s*%)/gi;
+      const sectionScoreRegex = /(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)(?:\s*\/\s*|\s*out of\s*)(\d+(?:\.\d+)?)|(?:score|grade|points|mark)(?:\s*|:\s*)(\d+(?:\.\d+)?)(?:\s*%)/gi;
       let sectionScore = 0;
       let sectionPossible = 0;
       let matches;
