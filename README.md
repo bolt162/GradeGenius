@@ -2,7 +2,8 @@
 
 # GradeGenius
 
-<img src="./public/images/main_logo.png" alt="GradeGenius Logo" width="220" />
+<img width="276" height="94" alt="Screenshot 2026-04-15 at 12 26 30 AM" src="https://github.com/user-attachments/assets/58f58689-c33b-4e74-bdb3-fe46a8c3b1ca" />
+
 
 **AI-powered assignment grading for instructors, powered by a rubric-aware agentic workflow.**
 
