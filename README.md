@@ -80,23 +80,17 @@ The grading agent plans a run, calls discrete tools (`detect_submission_type`, `
 
 ## Screenshots
 
-> Drag and drop screenshots directly into each section on GitHub — the images will upload and the Markdown references will be inserted automatically.
-
-### Landing / Hero
-![Landing](./public/images/hero-dashboard.png)
-
 ### Dashboard
-![Dashboard](./public/images/hero-dashboard-tilted.png)
+<img width="1512" height="824" alt="Screenshot 2026-04-15 at 12 16 30 AM" src="https://github.com/user-attachments/assets/5356894a-5765-483a-8744-938702f96a90" />
 
 ### Assignments & Uploads
-![Uploads](./public/images/Uploads-no-bg.png)
+<img width="1509" height="816" alt="Screenshot 2026-04-15 at 12 16 38 AM" src="https://github.com/user-attachments/assets/c6885ba3-0314-4676-b814-4b49961a3191" />
 
 ### Rubrics
-![Rubrics](./public/images/Rubrics.png)
+<img width="1503" height="822" alt="Screenshot 2026-04-15 at 12 16 56 AM" src="https://github.com/user-attachments/assets/ed72c3de-b9b1-4def-9ebe-3611de2a724c" />
 
 ### Grade / Feedback View
-![Feedback](./public/images/Feedback.png)
-
+<img width="1510" height="818" alt="Screenshot 2026-04-15 at 12 20 12 AM" src="https://github.com/user-attachments/assets/ce47c2a0-80c8-4ea6-8536-a59b62242365" />
 
 ## Project Structure
 
