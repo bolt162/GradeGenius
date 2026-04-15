@@ -1,36 +1,233 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
+
+# GradeGenius
+
+<img src="./public/images/main_logo.png" alt="GradeGenius Logo" width="220" />
+
+**AI-powered assignment grading for instructors, powered by a rubric-aware agentic workflow.**
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://vercel.com/)
+
+</div>
+
+---
+
+## Overview
+
+GradeGenius is a full-stack web application that helps instructors grade student assignments — essays, code submissions, and short-answer responses — in a fraction of the time. Instructors upload a rubric and one or more submissions; a rubric-aware grading agent evaluates each submission criterion-by-criterion, retrieves similar graded examples for context, cites evidence from the student's work, and returns a structured grade with actionable feedback.
+
+The goal is simple: keep the instructor in control of the rubric and the final call, but remove the tedious first pass of grading.
+
+## Key Features
+
+- **Rubric-driven grading** — Upload or author a rubric once and reuse it across assignments.
+- **Multi-format submissions** — Supports essays, code, DOCX files, and free-form short answers.
+- **Agentic grading pipeline** — A planning-and-tool-calling agent scores each rubric criterion individually, retrieves supporting context via RAG, and self-critiques before finalizing.
+- **Evidence-grounded feedback** — Every score is tied back to a quoted span from the submission.
+- **Analytics dashboard** — Class-level and per-assignment performance insights.
+- **Token-based usage model** — Transparent per-grade cost, billed through Stripe.
+- **Secure authentication** — Clerk-managed sessions, email verification, and protected routes.
+- **Demo mode** — Try the grading flow without signing up.
+
+## Tech Stack
+
+**Frontend**
+- Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4
+- Lucide + FontAwesome icons · react-markdown · react-syntax-highlighter
+
+**Backend / API**
+- Next.js Route Handlers (Node runtime)
+- Clerk (authentication and session management)
+- Stripe (billing and token purchases)
+- Nodemailer (contact + notification email)
+
+**AI / Agentic Layer**
+- LangChain + OpenAI (tool-calling agents, classification, grading)
+- Pinecone (vector store for Retrieval-Augmented Generation)
+- Custom classification and content-analysis modules
+
+**Data & Storage**
+- AWS S3 (submission files, rubrics, graded outputs)
+- AWS DynamoDB (users, token balances, grade records, agent run traces)
+- Vercel Postgres (auxiliary structured data)
+
+**Infrastructure**
+- Vercel (hosting, edge, CI/CD)
+- AWS SDK v3 (S3 + DynamoDB clients, presigned URLs)
+
+## Architecture at a Glance
+
+```
+ ┌────────────────────┐      ┌──────────────────────┐      ┌────────────────────┐
+ │  Next.js Frontend  │ ───▶ │  API Route Handlers  │ ───▶ │  Grading Agent     │
+ │  (App Router, RSC) │      │  (Auth, Upload, etc.)│      │  (LangChain + RAG) │
+ └────────────────────┘      └──────────────────────┘      └─────────┬──────────┘
+           ▲                           │                             │
+           │                           ▼                             ▼
+           │               ┌──────────────────────┐      ┌────────────────────┐
+           │               │  AWS S3 / DynamoDB   │      │  Pinecone (RAG)    │
+           │               └──────────────────────┘      └────────────────────┘
+           │                           │
+           └───────────────────────────┘
+               Stripe · Clerk · Vercel
+```
+
+The grading agent plans a run, calls discrete tools (`detect_submission_type`, `fetch_rubric`, `retrieve_similar_examples`, `score_rubric_criterion`, `finalize_grade`), scores each criterion individually with a strict JSON schema, and runs a self-critique pass before persisting results.
+
+## Screenshots
+
+> Drag and drop screenshots directly into each section on GitHub — the images will upload and the Markdown references will be inserted automatically.
+
+### Landing / Hero
+![Landing](./public/images/hero-dashboard.png)
+
+### Dashboard
+![Dashboard](./public/images/hero-dashboard-tilted.png)
+
+### Assignments & Uploads
+![Uploads](./public/images/Uploads-no-bg.png)
+
+### Rubrics
+![Rubrics](./public/images/Rubrics.png)
+
+### Grade / Feedback View
+![Feedback](./public/images/Feedback.png)
+
+
+## Project Structure
+
+```
+app/
+├── analytics/         # Class-level performance dashboards
+├── api/               # Route handlers (grade, upload, rubrics, tokens, etc.)
+├── assignments/       # Assignment management UI
+├── components/        # Shared React components
+├── context/           # React context providers
+├── dashboard/         # Main instructor dashboard
+├── demo/              # Public demo flow
+├── grade/             # Per-submission grade view
+├── lib/               # Agent, RAG, S3, DynamoDB, prompts
+│   └── rag/           # RAG service + types
+├── rubrics/           # Rubric authoring and library
+├── settings/          # Account and preferences
+├── tokens/            # Stripe-backed token purchases
+├── login/ · signup/ · verify/   # Auth flows (Clerk)
+└── privacy/ · terms/ · help/    # Static content
+scripts/               # DynamoDB setup + migration scripts
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 20+
+- An AWS account (S3 + DynamoDB)
+- Clerk, OpenAI, Pinecone, and Stripe accounts
+- A Vercel account (optional, for deployment)
+
+### Installation
+
+```bash
+git clone https://github.com/<your-username>/GradeGenius.git
+cd GradeGenius
+npm install
+```
+
+### Environment Variables
+
+Create a `.env.local` file in the project root with the following keys:
+
+```env
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+
+# OpenAI
+OPENAI_API_KEY=
+
+# Pinecone
+PINECONE_API_KEY=
+PINECONE_INDEX=
+
+# AWS
+AWS_REGION=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+S3_BUCKET=
+DYNAMODB_TABLE=
+
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# Email (Nodemailer)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+```
+
+### Database Setup
+
+```bash
+node scripts/setup-dynamodb.js
+```
+
+### Run Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Deployment
 
-To learn more about Next.js, take a look at the following resources:
+GradeGenius is designed to deploy on **Vercel** with zero configuration. Push to your connected Git repository and Vercel will build and deploy automatically. AWS and Pinecone credentials should be configured as Vercel environment variables.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Agentic Workflow
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The grading endpoint does not rely on a single monolithic prompt. Instead, a LangChain tool-calling agent orchestrates the run:
 
-## Deploy on Vercel
+1. **Plan** — The agent drafts a plan for which rubric criteria to evaluate and what context to retrieve.
+2. **Retrieve** — It queries Pinecone for similar graded examples, scoped to each criterion.
+3. **Score** — A dedicated tool scores one criterion at a time and returns a strict JSON object (`score`, `evidence`, `justification`), validated with Zod.
+4. **Critique** — A self-review pass checks evidence grounding and rubric coverage, and re-scores any low-confidence criteria.
+5. **Finalize** — The agent persists the grade to S3/DynamoDB, deducts tokens, and returns the result.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Guardrails include `maxIterations`, a wall-clock timeout, per-call token-budget checks, strict schema validation on tool outputs, and a deterministic fallback to the linear pipeline if the agent cannot converge.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+| Script                 | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| `npm run dev`          | Start the development server                  |
+| `npm run build`        | Build the production bundle                   |
+| `npm run build:no-lint`| Production build skipping ESLint              |
+| `npm start`            | Start the production server                   |
+| `npm run lint`         | Run ESLint                                     |
+
+## Roadmap
+
+- LMS integrations (Canvas, Google Classroom)
+- Batch grading queues with background workers
+- Instructor override + grade-appeal workflow
+- Fine-tuned domain-specific grading models
+
+## License
+
+This project is private and not currently licensed for redistribution.
+
+## Contact
+
+For questions, feedback, or demo access, use the contact form on the site or open an issue in this repository.
